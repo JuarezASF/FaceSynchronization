@@ -4,8 +4,9 @@
 
 #include "global.h"
 
-std::vector<DrawObject> drawObjects;
-std::vector<DrawObject> objectA, objectB, objectC;
+Object drawObject;
+std::vector<Object> keyObjects;
+std::vector<tinyobj::shape_t> firstModelShapes;
 
 int width = 768;
 int height = 768;
@@ -21,3 +22,4 @@ float eye[3], lookat[3], up[3];
 GLFWwindow *window;
 
 bool wireFrameEnabled = false;
+

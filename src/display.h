@@ -72,7 +72,8 @@ void CheckErrors(std::string desc);
 
 void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]);
 
-bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *drawObjects, const char *filename);
+bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *drawObjects, const char *filename,
+                       bool useAsFirst);
 
 void reshapeFunc(GLFWwindow *window, int w, int h);
 

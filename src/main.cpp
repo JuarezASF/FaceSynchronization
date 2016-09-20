@@ -17,32 +17,50 @@
 
 #include <sys/time.h>
 
+int quantityOfPoses = 3;
+std::vector<std::string> keyPoseFiles = {
+        "obj/rosto_neutro.obj",
+        "obj/rosto_bravo.obj",
+        "obj/rosto_feliz.obj",
+};
 
+std::vector<std::string> keyPoseNames = {
+        "neutro",
+        "bravo",
+        "feliz"
+};
 
-int alpha_slider0 = 100;
-int alpha_slider1 = 0;
-int alpha_slider2 = 0;
+int *sliders = new int[quantityOfPoses];
+float *weight = new float[quantityOfPoses];
 
 int alpha_slider_max = 100;
 
 void update();
 
-float weight[] = {1.0f, 0.0f, 0.0f};
 float t = 0.0f;
 
 
 int main(int argc, char **argv) {
 
+    //zero out weights
+    for (int k = 0; k < quantityOfPoses; k++) {
+        weight[k] = 0.0;
+        sliders[k] = 0.0;
+    }
+
+    //initialize open cv
     cvNamedWindow("Control", CV_WINDOW_AUTOSIZE);
 
-    cvCreateTrackbar("neutro", "Control", &alpha_slider0, alpha_slider_max, nullptr);
-    cvCreateTrackbar("bravo", "Control", &alpha_slider1, alpha_slider_max, nullptr);
-    cvCreateTrackbar("feliz", "Control", &alpha_slider2, alpha_slider_max, nullptr);
-    cvWaitKey(50);
+    int sliderIdx = 0;
+    for (auto poseName : keyPoseNames) {
+        cvCreateTrackbar(poseName.c_str(), "Control", sliders + (sliderIdx++), alpha_slider_max, nullptr);
+    }
 
+    //very important to give it some time to start!
+    cvWaitKey(100);
+
+    //initialize open gl
     Init();
-
-
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
         return -1;
@@ -65,7 +83,7 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(window, clickFunc);
     glfwSetCursorPosCallback(window, motionFunc);
 
-    glewExperimental = true;
+    glewExperimental = (GLboolean) true;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to initialize GLEW." << std::endl;
         return -1;
@@ -74,21 +92,14 @@ int main(int argc, char **argv) {
     reshapeFunc(window, width, height);
 
     float bmin[3], bmax[3];
-    char initial[] = "obj/rosto_neutro.obj";
-    char faceA[] = "obj/rosto_neutro.obj";
-    char faceB[] = "obj/rosto_bravo.obj";
-    char faceC[] = "obj/rosto_feliz.obj";
-    if (!LoadObjAndConvert(bmin, bmax, &drawObjects, initial)) {
+    if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true)) {
         return -1;
     }
-    if (!LoadObjAndConvert(bmin, bmax, &objectA, faceA)) {
-        return -1;
-    }
-    if (!LoadObjAndConvert(bmin, bmax, &objectB, faceB)) {
-        return -1;
-    }
-    if (!LoadObjAndConvert(bmin, bmax, &objectC, faceC)) {
-        return -1;
+    for (auto poseFile : keyPoseFiles) {
+        keyObjects.emplace_back();
+        if (!LoadObjAndConvert(bmin, bmax, &keyObjects[keyObjects.size() - 1], poseFile.c_str(), false)) {
+            return -1;
+        }
     }
 
     float maxExtent = 0.5f * (bmax[0] - bmin[0]);
@@ -112,8 +123,7 @@ int main(int argc, char **argv) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         GLfloat mat[4][4];
-        gluLookAt(eye[0], eye[1], eye[2], lookat[0], lookat[1], lookat[2], up[0],
-                  up[1], up[2]);
+        gluLookAt(eye[0], eye[1], eye[2], lookat[0], lookat[1], lookat[2], up[0], up[1], up[2]);
         build_rotmatrix(mat, curr_quat);
         glMultMatrixf(&mat[0][0]);
 
@@ -121,10 +131,10 @@ int main(int argc, char **argv) {
         glScalef(1.0f / maxExtent, 1.0f / maxExtent, 1.0f / maxExtent);
 
         // Centerize object.
-        glTranslatef(-0.5 * (bmax[0] + bmin[0]), -0.5 * (bmax[1] + bmin[1]),
-                     -0.5 * (bmax[2] + bmin[2]));
+        glTranslatef((GLfloat) (-0.5 * (bmax[0] + bmin[0])), (GLfloat) (-0.5 * (bmax[1] + bmin[1])),
+                     (GLfloat) (-0.5 * (bmax[2] + bmin[2])));
 
-        Draw(drawObjects);
+        Draw(drawObject);
 
         glfwSwapBuffers(window);
         cv::waitKey(50);
@@ -136,18 +146,21 @@ int main(int argc, char **argv) {
 
 void update() {
 
-    weight[0] = 1 - alpha_slider1 / 100.0f - alpha_slider2 / 100.0f;
-    weight[1] = alpha_slider1 / 100.0f;
-    weight[2] = alpha_slider2 / 100.0f;
-    float weigthSum = weight[0] + weight[1] + weight[2];
+    float weightSum = 0;
+    for (int i = 1; i < quantityOfPoses; i++) {
+        weight[i] = ((float) sliders[i]) / alpha_slider_max;
+        weightSum += weight[i];
+    }
+
+    weight[0] = 1.0f - weightSum;
 
 
-    for (int i = 0; i < drawObjects.size(); i++) {
-        for (int j = 0; j < drawObjects[i].attributes.size(); j++) {
-            drawObjects[i].attributes[j] = (objectA[i].attributes[j] * weight[0]
-                                            + objectB[i].attributes[j] * weight[1]
-                                            + objectC[i].attributes[j] * weight[2]) /
-                                           weigthSum;
+    for (int i = 0; i < drawObject.size(); i++) {
+        for (int j = 0; j < drawObject[i].attributes.size(); j++) {
+            drawObject[i].attributes[j] = 0.0;
+            for (int k = 0; k < quantityOfPoses; k++) {
+                drawObject[i].attributes[j] += weight[k] * keyObjects[k][i].attributes[j];
+            }
         }
     }
 }

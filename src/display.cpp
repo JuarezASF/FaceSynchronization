@@ -24,7 +24,6 @@
 #include <sys/time.h>
 
 
-
 void keyboardFunc(GLFWwindow *window, int key, int scancode, int action,
                   int mods) {
     (void) window;
@@ -177,6 +176,7 @@ void Init() {
     up[1] = 1.0f;
     up[2] = 0.0f;
 }
+
 void CheckErrors(std::string desc) {
     GLenum e = glGetError();
     if (e != GL_NO_ERROR) {
@@ -209,9 +209,9 @@ void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
     }
 }
 
-bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *drawObjects, const char *filename) {
+bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *drawObjects, const char *filename,
+                       bool useAsFirst) {
     tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
     timerutil tm;
@@ -219,8 +219,18 @@ bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *dr
     tm.start();
 
     std::string err;
-    bool ret =
-            tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename, NULL);
+
+
+    std::vector<tinyobj::shape_t> trashShapes;
+    bool ret;
+    if (useAsFirst) {
+        ret = tinyobj::LoadObj(&attrib, &firstModelShapes, &materials, &err, filename, NULL);
+    }
+    else {
+        ret = tinyobj::LoadObj(&attrib, &trashShapes, &materials, &err, filename, NULL);
+    }
+
+    std::vector<tinyobj::shape_t> &shapes = firstModelShapes;
     if (!err.empty()) {
         std::cerr << err << std::endl;
     }

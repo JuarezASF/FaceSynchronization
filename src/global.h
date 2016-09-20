@@ -6,9 +6,12 @@
 #define BLENDSHAPESVIEWER_GLOBAL_H
 
 #include "DrawObject.h"
+#include "structs.h"
 
-extern std::vector<DrawObject> drawObjects;
-extern std::vector<DrawObject> objectA, objectB, objectC;
+typedef std::vector<DrawObject> Object;
+
+extern Object drawObject;
+extern std::vector<Object> keyObjects;
 
 extern int width;
 extern int height;
@@ -24,4 +27,6 @@ extern float eye[3], lookat[3], up[3];
 extern GLFWwindow *window;
 
 extern bool wireFrameEnabled;
+
+extern std::vector<tinyobj::shape_t> firstModelShapes;
 #endif //BLENDSHAPESVIEWER_GLOBAL_H
