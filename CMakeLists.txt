@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 2.8)
 project(BlendShapesViewer)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -17,9 +17,11 @@ include(MSVCMultipleProcessCompile) # /MP
 include_directories(/opt/opencv/opencv-2.4.13/release/include)
 set(OPENCV24_LIB /opt/opencv/opencv-2.4.13/release/lib)
 
+#FaceTracker
 include_directories(/opt/face-analysis-sdk-master/src)
 include_directories(/opt/face-analysis-sdk-master/build/src)
 set(FACE_ANALYSIS_LIB /opt/face-analysis-sdk-master/build/lib)
+
 include_directories(
         external/AntTweakBar-1.16/include/
         external/glfw-3.1.2/include/GLFW/
@@ -45,7 +47,19 @@ add_definitions(
 )
 
 
-set(SOURCE_FILES src/main.cpp src/trackball.cc src/display.h src/display.cpp src/global.h src/global.cpp src/DrawObject.cpp src/DrawObject.h src/structs.h src/Filter.cpp src/Filter.h)
+set(SOURCE_FILES
+        src/main.cpp
+        src/trackball.cc
+        src/display.h
+        src/display.cpp
+        src/global.h
+        src/global.cpp
+        src/DrawObject.cpp
+        src/DrawObject.h
+        src/structs.h
+        src/Filter.cpp
+        src/Filter.h
+        )
 add_executable(BlendShapesViewer ${SOURCE_FILES})
 target_link_libraries(BlendShapesViewer
         ${ALL_LIBS}
@@ -53,4 +67,7 @@ target_link_libraries(BlendShapesViewer
         ${OPENCV24_LIB}/libopencv_imgproc.so
         ${OPENCV24_LIB}/libopencv_objdetect.so
         ${OPENCV24_LIB}/libopencv_core.so
+        ${FACE_ANALYSIS_LIB}/libutilities.so
+        ${FACE_ANALYSIS_LIB}/libclmTracker.so
+        ${FACE_ANALYSIS_LIB}/libavatarAnim.so
         )
