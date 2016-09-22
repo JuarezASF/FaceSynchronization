@@ -20,13 +20,27 @@
 #define HIGHRES 0
 
 #if HIGHRES > 0
-int quantityOfPoses = 1;
+int quantityOfPoses = 8;
 std::vector<std::string> keyPoseFiles = {
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
+        "obj/Rosto_HD.OBJ",
         "obj/Rosto_HD.OBJ",
 };
 
 std::vector<std::string> keyPoseNames = {
         "neutro",
+        "neutro2",
+        "neutro3",
+        "neutro4",
+        "neutro5",
+        "neutro6",
+        "neutro7",
+        "neutro8",
 };
 
 #else
@@ -66,7 +80,7 @@ std::vector<std::string> keyPoseNames = {
 int *sliders = new int[quantityOfPoses];
 float *weight = new float[quantityOfPoses];
 
-int alpha_slider_max = 300;
+int alpha_slider_max = 150;
 
 void update();
 

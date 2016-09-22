@@ -42,7 +42,7 @@ add_definitions(
 )
 
 
-set(SOURCE_FILES src/main.cpp src/trackball.cc src/display.h src/display.cpp src/global.h src/global.cpp src/DrawObject.cpp src/DrawObject.h src/structs.h)
+set(SOURCE_FILES src/main.cpp src/trackball.cc src/display.h src/display.cpp src/global.h src/global.cpp src/DrawObject.cpp src/DrawObject.h src/structs.h src/Filter.cpp src/Filter.h)
 add_executable(BlendShapesViewer ${SOURCE_FILES})
 target_link_libraries(BlendShapesViewer
         ${ALL_LIBS}
