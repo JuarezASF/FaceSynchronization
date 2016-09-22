@@ -30,11 +30,9 @@ std::vector<std::string> keyPoseNames = {
 };
 
 #else
-int quantityOfPoses = 14;
+int quantityOfPoses = 12;
 std::vector<std::string> keyPoseFiles = {
         "obj/rosto_neutro.obj",
-        "obj/rosto_bravo.obj",
-        "obj/rosto_bravo.obj",
         "obj/rosto_bravo.obj",
         "obj/rosto_feliz.obj",
         "obj/rosto_cheek_L.OBJ",
@@ -51,8 +49,6 @@ std::vector<std::string> keyPoseFiles = {
 std::vector<std::string> keyPoseNames = {
         "neutro",
         "bravo",
-        "bravo2",
-        "bravo3",
         "feliz",
         "left cheek",
         "right cheek",
@@ -70,7 +66,7 @@ std::vector<std::string> keyPoseNames = {
 int *sliders = new int[quantityOfPoses];
 float *weight = new float[quantityOfPoses];
 
-int alpha_slider_max = 100;
+int alpha_slider_max = 300;
 
 void update();
 
@@ -86,11 +82,15 @@ int main(int argc, char **argv) {
     }
 
     //initialize open cv
-    cvNamedWindow("Control", CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Control0", CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Control1", CV_WINDOW_AUTOSIZE);
+
+    int qtdPerControlWindow = 8;
 
     int sliderIdx = 0;
     for (auto poseName : keyPoseNames) {
-        cvCreateTrackbar(poseName.c_str(), "Control", sliders + (sliderIdx++), alpha_slider_max, nullptr);
+        std::string windowName = "Control" + std::to_string((int)(sliderIdx * 1.0 / qtdPerControlWindow));
+        cvCreateTrackbar(poseName.c_str(), windowName.c_str(), sliders + (sliderIdx++), alpha_slider_max, nullptr);
     }
 
     //very important to give it some time to start!
@@ -185,7 +185,7 @@ void update() {
 
     float weightSum = 0;
     for (int i = 1; i < quantityOfPoses; i++) {
-        weight[i] = ((float) sliders[i]) / alpha_slider_max;
+        weight[i] = ((float) sliders[i]) / 100;
         weightSum += weight[i];
     }
 
