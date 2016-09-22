@@ -5,6 +5,9 @@
 #ifndef BLENDSHAPESVIEWER_GLOBAL_H
 #define BLENDSHAPESVIEWER_GLOBAL_H
 
+#include <opencv2/highgui.hpp>
+#include <tracker/FaceTracker.hpp>
+
 #include "DrawObject.h"
 #include "structs.h"
 
@@ -29,4 +32,9 @@ extern GLFWwindow *window;
 extern bool wireFrameEnabled;
 
 extern std::vector<tinyobj::shape_t> firstModelShapes;
+
+extern FACETRACKER::FaceTracker *tracker;
+extern FACETRACKER::FaceTrackerParams *params;
+extern std::vector<cv::VideoCapture> capture;
+
 #endif //BLENDSHAPESVIEWER_GLOBAL_H

@@ -2,6 +2,8 @@
 // Created by juarez on 19/09/16.
 //
 
+#include <tracker/FaceTracker.hpp>
+#include <opencv2/highgui.hpp>
 #include "global.h"
 
 Object drawObject;
@@ -23,3 +25,6 @@ GLFWwindow *window;
 
 bool wireFrameEnabled = false;
 
+FACETRACKER::FaceTracker *tracker;
+FACETRACKER::FaceTrackerParams *params;
+std::vector<cv::VideoCapture> capture(2);

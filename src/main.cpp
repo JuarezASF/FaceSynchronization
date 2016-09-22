@@ -11,6 +11,8 @@
 #include "trackball.h"
 #include "global.h"
 #include "display.h"
+#include "util.h"
+#include "Filter.h"
 
 #include <opencv2/highgui.hpp>
 
@@ -85,62 +87,38 @@ int *sliders = new int[quantityOfPoses];
 float *weight = new float[quantityOfPoses];
 double *sensors = new double[quantityOfSensors];
 
+
+bool useFilter = true;
+std::vector<HanningFilter> filters(quantityOfSensors);
+
 int alpha_slider_max = 150;
 
 void update();
 
-void getSensors(std::vector<cv::Point3d> pointsFace);
+void updateSensors(std::vector<cv::Point3d> pointsFace);
+
+void updateTracking();
 
 float t = 0.0f;
 
+//frame is used for web cam input; but the CSIRO face detection works only on gray scale images
+cv::Mat frame, grayScale;
+std::vector<cv::Point3d> points3d(66), points3dOld(66), points3dDiff(66);
+std::vector<cv::Point_<double> > pointsCam1;
+
+//camera parameters
+double f1 = (854.792781659906610 + 857.614193372593600) / 2;
+double f2 = (834.378121568220080 + 835.838850269775660) / 2;
+double b = 18;
 
 int main(int argc, char **argv) {
 
-    ////////////////////////////////////////////FACETRACKER//////////////////////////////////////////////////////////
-
-    FACETRACKER::FaceTracker *tracker = FACETRACKER::LoadFaceTracker();
-    if (tracker == nullptr) {
-        std::cerr << "Cannot load tracker!" << std::endl;
+    if (!startFaceTracker()) {
         return 0;
-    }
-    FACETRACKER::FaceTrackerParams *params = FACETRACKER::LoadFaceTrackerParams();
-
-    if (params == nullptr) {
-        std::cerr << "Cannot load tracker params!" << std::endl;
+    };
+    if (!startCapture()) {
         return 0;
-
-    }
-
-//    cv::VideoCapture cam(0);
-    std::vector<cv::VideoCapture> capture(2);
-    capture.at(0).open("video/out1.avi");
-    capture.at(1).open("video/out2.avi");
-//    capture.at(0).open(1);
-//    capture.at(1).open(2);
-
-    if (!capture.at(0).isOpened() || !capture.at(1).isOpened()) {
-        std::cerr << "cannot open camera!" << std::endl;
-        return 0;
-    }
-
-    bool shouldFinish = false;
-
-    //frame is used for web cam input; but the CSIRO face detection works only on gray scale images
-    cv::Mat frame, grayScale;
-    int detectionQuality;
-    int cameraNum;
-    std::vector<cv::Point_<double> > pointsCam1;
-
-    double f1 = (854.792781659906610 + 857.614193372593600)/2;
-    double f2 = (834.378121568220080 + 835.838850269775660) / 2;
-    double b = 18;
-
-    std::vector <cv::Point3d> points3d(66), points3dOld(66), points3dDiff(66);
-
-//    std::cout << "press 'q' to quit" << std::endl;
-
-////////////////////////////////////////////FACETRACKER//////////////////////////////////////////////////////////
-
+    };
 
     //zero out weights
     for (int k = 0; k < quantityOfPoses; k++) {
@@ -148,15 +126,15 @@ int main(int argc, char **argv) {
         sliders[k] = (int) 0;
     }
 
-    //initialize open cv
+    //initialize open cv windows for slide trackers
     cvNamedWindow("Control0", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("Control1", CV_WINDOW_AUTOSIZE);
 
+    //initialize sliders
     int qtdPerControlWindow = 8;
-
     int sliderIdx = 0;
     for (auto poseName : keyPoseNames) {
-        std::string windowName = "Control" + std::to_string((int)(sliderIdx * 1.0 / qtdPerControlWindow));
+        std::string windowName = "Control" + std::to_string((int) (sliderIdx * 1.0 / qtdPerControlWindow));
         cvCreateTrackbar(poseName.c_str(), windowName.c_str(), sliders + (sliderIdx++), alpha_slider_max, nullptr);
     }
 
@@ -195,7 +173,10 @@ int main(int argc, char **argv) {
 
     reshapeFunc(window, width, height);
 
+    //load OBJ's while keeping track of maximum co-ordenades required to display objects
     float bmin[3], bmax[3];
+
+    //first object on array is assumed to be neutral pose
     if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true)) {
         return -1;
     }
@@ -215,75 +196,12 @@ int main(int argc, char **argv) {
     }
 
     while (glfwWindowShouldClose(window) == GL_FALSE) {
+        updateTracking();
 
-        cameraNum = 1;
-
-        for(auto cap : capture)
-        {
-            cap >> frame;
-
-            cv::cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
-
-            //update state of tracker with new frame
-            detectionQuality = tracker->NewFrame(grayScale, params);
-
-            if (detectionQuality == 0 || detectionQuality == FACETRACKER::FaceTracker::TRACKER_FAILED) {
-                tracker->Reset();
-            }
-
-            std::cout << "Detection quality is: " << detectionQuality << std::endl;
-
-            //obtain points that were tracked
-            auto points = tracker->getShape();
-
-            int count = 0;
-
-            //draw point on input frame
-            for (auto p : points) {
-                cv::putText(frame, std::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
-                count++;
-//                cv::circle(frame, p, 1, cv::Scalar(255, 0, 0));
-
-            }
-
-            points3dOld = points3d;
-
-            cv::imshow(std::to_string(cameraNum), frame);
-
-            if(cameraNum == 1)
-                pointsCam1 = points;
-            else if(detectionQuality)
-            {
-                for(int i = 0; i < points.size(); i++)
-                {
-                    points[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - points[i].y;
-                    pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
-
-                    points3d[i].z = f1*f2*b/(pointsCam1[i].x*f2 - points[i].x*f1);
-                    points3d[i].x = (pointsCam1[i].x/f1+points[i].x/f2)*points3d[i].z/2;
-                    points3d[i].y = (pointsCam1[i].y/f1+points[i].y/f2)*points3d[i].z/2;
-                }
-            }
-
-//            if(!points3dOld.empty())
-//                for(int i = 0; i < points3d.size(); i++)
-//                {
-//                    points3dDiff[i] = points3d[i] - points3dOld[i];
-//                }
-
-            std::cout << points3d[61].y - points3d[64].y << std::endl;
-            // Z = f1*f2*b/(x1*f2 - x2*f1);
-
-            cameraNum++;
-
-            if (char q = (char) (cv::waitKey(30) & 0xFF) == 'q') {
-                shouldFinish = true;
-            }
-        }
-
-        getSensors(points3d);
+        updateSensors(points3d);
 
         update();
+
         glfwPollEvents();
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -314,6 +232,65 @@ int main(int argc, char **argv) {
     glfwTerminate();
 }
 
+void updateTracking() {
+    int detectionQuality;
+    int cameraNum = 1;
+
+    for (auto cap : capture) {
+        cap >> frame;
+
+        cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
+
+        //update state of tracker with new frame
+        detectionQuality = tracker->NewFrame(grayScale, params);
+
+        if (detectionQuality == 0 || detectionQuality == FACETRACKER::FaceTracker::TRACKER_FAILED) {
+            tracker->Reset();
+        }
+
+        //obtain points that were tracked
+        auto points = tracker->getShape();
+
+        int count = 0;
+
+        //draw point on input frame
+        for (auto p : points) {
+            putText(frame, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
+            count++;
+//            cv::circle(frame, p, 1, cv::Scalar(255, 0, 0));
+
+        }
+
+        points3dOld = points3d;
+
+        imshow("input#" + std::to_string(cameraNum), frame);
+
+        if (cameraNum == 1)
+            pointsCam1 = points;
+        else if (detectionQuality) {
+            for (int i = 0; i < points.size(); i++) {
+                points[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - points[i].y;
+                pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
+
+                points3d[i].z = f1 * f2 * b / (pointsCam1[i].x * f2 - points[i].x * f1);
+                points3d[i].x = (pointsCam1[i].x / f1 + points[i].x / f2) * points3d[i].z / 2;
+                points3d[i].y = (pointsCam1[i].y / f1 + points[i].y / f2) * points3d[i].z / 2;
+            }
+        }
+
+//            if(!points3dOld.empty())
+//                for(int i = 0; i < points3d.size(); i++)
+//                {
+//                    points3dDiff[i] = points3d[i] - points3dOld[i];
+//                }
+
+        std::cout << points3d[61].y - points3d[64].y << std::endl;
+        // Z = f1*f2*b/(x1*f2 - x2*f1);
+
+        cameraNum++;
+    }
+}
+
 
 void update() {
 
@@ -321,7 +298,16 @@ void update() {
 //    for (int i = 1; i < quantityOfPoses; i++) {
 //        weight[i] = ((float) sliders[i]) / 100;
     for (int i = 0; i < quantityOfSensors; i++) {
-        weight[i] = ((float) sensors[i]) / alpha_slider_max;
+        float measurement;
+
+        if (useFilter) {
+            measurement = filters[i].updateValue((float) sensors[i]);
+        }
+        else {
+            measurement = (float) sensors[i];
+        }
+
+        weight[i] = measurement / alpha_slider_max;
         weightSum += weight[i];
     }
 
@@ -338,23 +324,20 @@ void update() {
     }
 }
 
-void getSensors(std::vector<cv::Point3d> pointsFace){
+void updateSensors(std::vector<cv::Point3d> pointsFace) {
+
 
     sensors[0] = 0;
-    //100*(diffPoints-dmin)/(dmax-dmin)
-    sensors[1] = 100*((pointsFace[61].y - pointsFace[64].y)-0.2)/(3.5-0.2);
+    sensors[1] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.2) / (3.5 - 0.2);
 
-    if(sensors[1] > 100)
-        sensors[1] = 100;
-    if(sensors[1] < 0)
-        sensors [1] = 0;
-
-//    sensors[0] = 100*((pointsFace[61].y - pointsFace[64].y)-0.2)/(3.5-0.2);
-//
-//    if(sensors[0] > 100)
-//        sensors[0] = 100;
-//    if(sensors[0] < 0)
-//        sensors [0] = 0;
+    //fix problems
+    for (int i = 0; i < quantityOfSensors; i++) {
+        if (sensors[i] > 100)
+            sensors[i] = 100;
+        if (sensors[i] < 0)
+            sensors[i] = 0;
+    }
 
 
 }
+

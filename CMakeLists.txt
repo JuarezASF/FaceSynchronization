@@ -59,7 +59,7 @@ set(SOURCE_FILES
         src/structs.h
         src/Filter.cpp
         src/Filter.h
-        )
+        src/util.h)
 add_executable(BlendShapesViewer ${SOURCE_FILES})
 target_link_libraries(BlendShapesViewer
         ${ALL_LIBS}
