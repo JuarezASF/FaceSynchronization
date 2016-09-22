@@ -17,9 +17,24 @@
 
 #include <sys/time.h>
 
-int quantityOfPoses = 9;
+#define HIGHRES 0
+
+#if HIGHRES > 0
+int quantityOfPoses = 1;
+std::vector<std::string> keyPoseFiles = {
+        "obj/Rosto_HD.OBJ",
+};
+
+std::vector<std::string> keyPoseNames = {
+        "neutro",
+};
+
+#else
+int quantityOfPoses = 14;
 std::vector<std::string> keyPoseFiles = {
         "obj/rosto_neutro.obj",
+        "obj/rosto_bravo.obj",
+        "obj/rosto_bravo.obj",
         "obj/rosto_bravo.obj",
         "obj/rosto_feliz.obj",
         "obj/rosto_cheek_L.OBJ",
@@ -28,11 +43,16 @@ std::vector<std::string> keyPoseFiles = {
         "obj/rosto_Eyebrow_R.OBJ",
         "obj/rosto_Eye_L.OBJ",
         "obj/rosto_Eye_R.OBJ",
+        "obj/rosto_Mouth_Open.OBJ",
+        "obj/rosto_Mouth_DuckFace.OBJ",
+        "obj/rosto_Nariz_flare.OBJ"
 };
 
 std::vector<std::string> keyPoseNames = {
         "neutro",
         "bravo",
+        "bravo2",
+        "bravo3",
         "feliz",
         "left cheek",
         "right cheek",
@@ -40,16 +60,12 @@ std::vector<std::string> keyPoseNames = {
         "right eyebrow",
         "left eye",
         "right eye",
+        "boca aberta",
+        "boca fechada",
+        "nariz",
 };
-std::vector<bool> invertNormals = {
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-};
+
+#endif
 
 int *sliders = new int[quantityOfPoses];
 float *weight = new float[quantityOfPoses];
@@ -113,13 +129,12 @@ int main(int argc, char **argv) {
     reshapeFunc(window, width, height);
 
     float bmin[3], bmax[3];
-    if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true, invertNormals[0])) {
+    if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true)) {
         return -1;
     }
     for (auto poseFile : keyPoseFiles) {
         keyObjects.emplace_back();
-        if (!LoadObjAndConvert(bmin, bmax, &keyObjects[keyObjects.size() - 1], poseFile.c_str(), false,
-                               invertNormals[keyObjects.size() - 1])) {
+        if (!LoadObjAndConvert(bmin, bmax, &keyObjects[keyObjects.size() - 1], poseFile.c_str(), false)) {
             return -1;
         }
     }

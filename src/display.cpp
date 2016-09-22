@@ -210,7 +210,7 @@ void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
 }
 
 bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *drawObjects, const char *filename,
-                       bool useAsFirst, bool invertNormal) {
+                       bool useAsFirst) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::material_t> materials;
 
@@ -313,16 +313,9 @@ bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *dr
                     attributes.push_back(v[k][0]);
                     attributes.push_back(v[k][1]);
                     attributes.push_back(v[k][2]);
-                    if (invertNormal) {
-                        attributes.push_back(-1 * n[k][0]);
-                        attributes.push_back(-1 * n[k][1]);
-                        attributes.push_back(-1 * n[k][2]);
-                    }
-                    else {
-                        attributes.push_back(n[k][0]);
-                        attributes.push_back(n[k][1]);
-                        attributes.push_back(n[k][2]);
-                    }
+                    attributes.push_back(n[k][0]);
+                    attributes.push_back(n[k][1]);
+                    attributes.push_back(n[k][2]);
                     // Use normal as color.
                     float c[3] = {n[k][0], n[k][1], n[k][2]};
                     float len2 = c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
