@@ -71,3 +71,15 @@ target_link_libraries(BlendShapesViewer
         ${FACE_ANALYSIS_LIB}/libclmTracker.so
         ${FACE_ANALYSIS_LIB}/libavatarAnim.so
         )
+
+add_executable(TrackAndShow
+        src/applyTrackerAndShow.cpp)
+target_link_libraries(TrackAndShow
+        ${OPENCV24_LIB}/libopencv_highgui.so
+        ${OPENCV24_LIB}/libopencv_imgproc.so
+        ${OPENCV24_LIB}/libopencv_objdetect.so
+        ${OPENCV24_LIB}/libopencv_core.so
+        ${FACE_ANALYSIS_LIB}/libutilities.so
+        ${FACE_ANALYSIS_LIB}/libclmTracker.so
+        ${FACE_ANALYSIS_LIB}/libavatarAnim.so
+        )
