@@ -17,17 +17,38 @@
 
 #include <sys/time.h>
 
-int quantityOfPoses = 3;
+int quantityOfPoses = 9;
 std::vector<std::string> keyPoseFiles = {
         "obj/rosto_neutro.obj",
         "obj/rosto_bravo.obj",
         "obj/rosto_feliz.obj",
+        "obj/rosto_cheek_L.OBJ",
+        "obj/rosto_cheek_R.OBJ",
+        "obj/rosto_Eyebrow_L.OBJ",
+        "obj/rosto_Eyebrow_R.OBJ",
+        "obj/rosto_Eye_L.OBJ",
+        "obj/rosto_Eye_R.OBJ",
 };
 
 std::vector<std::string> keyPoseNames = {
         "neutro",
         "bravo",
-        "feliz"
+        "feliz",
+        "left cheek",
+        "right cheek",
+        "left eyebrow",
+        "right eyebrow",
+        "left eye",
+        "right eye",
+};
+std::vector<bool> invertNormals = {
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
 };
 
 int *sliders = new int[quantityOfPoses];
@@ -45,7 +66,7 @@ int main(int argc, char **argv) {
     //zero out weights
     for (int k = 0; k < quantityOfPoses; k++) {
         weight[k] = 0.0;
-        sliders[k] = 0.0;
+        sliders[k] = (int) 0;
     }
 
     //initialize open cv
@@ -92,12 +113,13 @@ int main(int argc, char **argv) {
     reshapeFunc(window, width, height);
 
     float bmin[3], bmax[3];
-    if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true)) {
+    if (!LoadObjAndConvert(bmin, bmax, &drawObject, keyPoseFiles[0].c_str(), true, invertNormals[0])) {
         return -1;
     }
     for (auto poseFile : keyPoseFiles) {
         keyObjects.emplace_back();
-        if (!LoadObjAndConvert(bmin, bmax, &keyObjects[keyObjects.size() - 1], poseFile.c_str(), false)) {
+        if (!LoadObjAndConvert(bmin, bmax, &keyObjects[keyObjects.size() - 1], poseFile.c_str(), false,
+                               invertNormals[keyObjects.size() - 1])) {
             return -1;
         }
     }
