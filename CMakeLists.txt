@@ -17,6 +17,9 @@ include(MSVCMultipleProcessCompile) # /MP
 include_directories(/opt/opencv/opencv-2.4.13/release/include)
 set(OPENCV24_LIB /opt/opencv/opencv-2.4.13/release/lib)
 
+include_directories(/opt/face-analysis-sdk-master/src)
+include_directories(/opt/face-analysis-sdk-master/build/src)
+set(FACE_ANALYSIS_LIB /opt/face-analysis-sdk-master/build/lib)
 include_directories(
         external/AntTweakBar-1.16/include/
         external/glfw-3.1.2/include/GLFW/
