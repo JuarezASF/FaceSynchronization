@@ -81,7 +81,7 @@ std::vector<std::string> keyPoseNames = {
 
 #endif
 
-int quantityOfSensors = 2;
+int quantityOfSensors = quantityOfPoses;
 
 int *sliders = new int[quantityOfPoses];
 float *weight = new float[quantityOfPoses];
@@ -127,8 +127,9 @@ int main(int argc, char **argv) {
     }
 
     //initialize open cv windows for slide trackers
-    cvNamedWindow("Control0", CV_WINDOW_AUTOSIZE);
-    cvNamedWindow("Control1", CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Control0", CV_WINDOW_NORMAL);
+    cvNamedWindow("Control1", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("Input#1", CV_WINDOW_KEEPRATIO);
 
     //initialize sliders
     int qtdPerControlWindow = 8;
@@ -263,10 +264,12 @@ void updateTracking() {
 
         points3dOld = points3d;
 
-        imshow("input#" + std::to_string(cameraNum), frame);
 
-        if (cameraNum == 1)
+        if (cameraNum == 1){
             pointsCam1 = points;
+            imshow("Input#" + std::to_string(cameraNum), frame);
+
+        }
         else if (detectionQuality) {
             for (int i = 0; i < points.size(); i++) {
                 points[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - points[i].y;
@@ -295,8 +298,6 @@ void updateTracking() {
 void update() {
 
     float weightSum = 0;
-//    for (int i = 1; i < quantityOfPoses; i++) {
-//        weight[i] = ((float) sliders[i]) / 100;
     for (int i = 0; i < quantityOfSensors; i++) {
         float measurement;
 
@@ -325,9 +326,10 @@ void update() {
 }
 
 void updateSensors(std::vector<cv::Point3d> pointsFace) {
+    //default behavior for sensors is to follow tracker
+    for (int i = 0; i < quantityOfPoses; i++)
+        sensors[i] = sliders[i];
 
-
-    sensors[0] = 0;
     sensors[1] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.2) / (3.5 - 0.2);
 
     //fix problems
