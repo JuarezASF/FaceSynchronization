@@ -104,12 +104,14 @@ float t = 0.0f;
 //frame is used for web cam input; but the CSIRO face detection works only on gray scale images
 cv::Mat frame, grayScale;
 std::vector<cv::Point3d> points3d(66), points3dOld(66), points3dDiff(66);
-std::vector<cv::Point_<double> > pointsCam1;
+std::vector<cv::Point_<double> > pointsCam1, points;
 
 //camera parameters
 double f1 = (854.792781659906610 + 857.614193372593600) / 2;
 double f2 = (834.378121568220080 + 835.838850269775660) / 2;
 double b = 18;
+
+double capHeight;
 
 int main(int argc, char **argv) {
 
@@ -238,6 +240,7 @@ void updateTracking() {
     int cameraNum = 1;
 
     for (auto cap : capture) {
+
         cap >> frame;
 
         cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
@@ -250,15 +253,15 @@ void updateTracking() {
         }
 
         //obtain points that were tracked
-        auto points = tracker->getShape();
+        points = tracker->getShape();
 
         int count = 0;
 
         //draw point on input frame
         for (auto p : points) {
-            putText(frame, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
+//            putText(frame, std::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
             count++;
-//            cv::circle(frame, p, 1, cv::Scalar(255, 0, 0));
+            cv::circle(frame, p, 1, cv::Scalar(255, 0, 0));
 
         }
 
@@ -271,6 +274,7 @@ void updateTracking() {
 
         }
         else if (detectionQuality) {
+            capHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
             for (int i = 0; i < points.size(); i++) {
                 points[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - points[i].y;
                 pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
@@ -287,7 +291,7 @@ void updateTracking() {
 //                    points3dDiff[i] = points3d[i] - points3dOld[i];
 //                }
 
-        std::cout << points3d[61].y - points3d[64].y << std::endl;
+//        std::cout << points3d[37].y - points3d[41].y << std::endl;
         // Z = f1*f2*b/(x1*f2 - x2*f1);
 
         cameraNum++;
@@ -298,7 +302,7 @@ void updateTracking() {
 void update() {
 
     float weightSum = 0;
-    for (int i = 0; i < quantityOfSensors; i++) {
+    for (int i = 1; i < quantityOfSensors; i++) {
         float measurement;
 
         if (useFilter) {
@@ -308,7 +312,7 @@ void update() {
             measurement = (float) sensors[i];
         }
 
-        weight[i] = measurement / alpha_slider_max;
+        weight[i] = measurement / 100;
         weightSum += weight[i];
     }
 
@@ -330,7 +334,46 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     for (int i = 0; i < quantityOfPoses; i++)
         sensors[i] = sliders[i];
 
-    sensors[1] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.2) / (3.5 - 0.2);
+
+//    sorriso
+    sensors[1] = 100 * ((points3d[54].x - points3d[48].x) - 5.8) / (10.5 - 5.8);
+
+    //sobramcelha esquerda
+    sensors[5] = 100 * ((points3d[25].y - points3d[27].y) - 3.3) / (5.5 - 3.3);
+
+    //sobramcelha direita
+    sensors[6] = 100 * ((points3d[18].y - points3d[27].y) - 3.9) / (4.4 - 3.9);
+
+    //olho esquerdo
+//    sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 3.9) / (4.4 - 3.9);
+
+//    olho direito
+//    sensors[8] = 100 * ((points3d[37].y - points3d[41].y) - 0.25) / (1.0 - 0.25);
+//
+    //boca aberta
+    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (3.5 - 0.25);
+
+//    sensors[8] = 100 - sensors[8];
+//
+//    std::cout << sensors[8] << std::endl;
+
+    cv::Mat olhoD;
+
+//    std::cout << (int)points[39].x - (int)points[36].x << "  " << (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) << (int)pointsCam1[36].x <<
+//            "  " << (int)pointsCam1[39].x << std::endl;
+    olhoD = grayScale(cv::Rect((int)points[36].x,(int)(capHeight - points[37].y),(int)points[39].x - (int)points[36].x +5,
+                               (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) +5));
+    if(!olhoD.empty())
+    cv::imshow("olhoD",olhoD);
+    cv::waitKey(50);
+
+    std::cout << cv::sum(olhoD)[0]/olhoD.total() << std:: endl;
+
+//    if(cv::sum(olhoD)[0]/olhoD.total() < 123)
+//        sensors[8] = 100;
+//    else
+//        sensors[8] = 0;
+
 
     //fix problems
     for (int i = 0; i < quantityOfSensors; i++) {
@@ -339,7 +382,6 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         if (sensors[i] < 0)
             sensors[i] = 0;
     }
-
 
 }
 
