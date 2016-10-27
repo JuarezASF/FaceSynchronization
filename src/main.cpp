@@ -242,6 +242,9 @@ void updateTracking() {
     for (auto cap : capture) {
 
         cap >> frame;
+        if(frame.empty()){
+            std::cout << "end of video reached!" << std::endl;
+        }
 
         cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
 
@@ -312,7 +315,7 @@ void update() {
             measurement = (float) sensors[i];
         }
 
-        weight[i] = measurement / 100;
+        weight[i] = measurement / 100.0f;
         weightSum += weight[i];
     }
 
@@ -377,8 +380,8 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 
     //fix problems
     for (int i = 0; i < quantityOfSensors; i++) {
-        if (sensors[i] > 100)
-            sensors[i] = 100;
+        if (sensors[i] > alpha_slider_max)
+            sensors[i] = alpha_slider_max;
         if (sensors[i] < 0)
             sensors[i] = 0;
     }
