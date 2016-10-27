@@ -113,7 +113,11 @@ double b = 18;
 
 double capHeight;
 
+
+
 int main(int argc, char **argv) {
+
+
 
     if (!startFaceTracker()) {
         return 0;
@@ -197,6 +201,12 @@ int main(int argc, char **argv) {
     if (maxExtent < 0.5f * (bmax[2] - bmin[2])) {
         maxExtent = 0.5f * (bmax[2] - bmin[2]);
     }
+
+    /////////////////////////////////
+    filters[8].updateP(4.0f, 1.0f, 1.0f, 0.16f);
+    filters[8].updateP(4.0f, 1.0f, 1.0f, 0.16f);
+
+    /////////////////////////////////
 
     while (glfwWindowShouldClose(window) == GL_FALSE) {
         updateTracking();
@@ -291,7 +301,7 @@ void updateTracking() {
 //                    points3dDiff[i] = points3d[i] - points3dOld[i];
 //                }
 
-//        std::cout << points3d[37].y - points3d[41].y << std::endl;
+        std::cout << "diff " << points3d[54].x - points3d[48].x << std::endl;
         // Z = f1*f2*b/(x1*f2 - x2*f1);
 
         cameraNum++;
@@ -336,38 +346,62 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 
 
 //    sorriso
-    sensors[1] = 100 * ((points3d[54].x - points3d[48].x) - 5.8) / (10.5 - 5.8);
+    sensors[1] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 5.5) / (7.2 - 5.5);
 
-    //sobramcelha esquerda
-    sensors[5] = 100 * ((points3d[25].y - points3d[27].y) - 3.3) / (5.5 - 3.3);
+    //sobrancelha esquerda
+    sensors[5] = 100 * ((pointsFace[25].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
+    std::cout << "sombra esq" << (pointsFace[25].y - pointsFace[27].y) << std::endl;
 
-    //sobramcelha direita
-    sensors[6] = 100 * ((points3d[18].y - points3d[27].y) - 3.9) / (4.4 - 3.9);
+    //sobrancelha direita
+    sensors[6] = 100 * ((pointsFace[18].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
+    std::cout << "sombra dir" << (pointsFace[18].y - pointsFace[27].y) << std::endl;
 
     //olho esquerdo
-//    sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 3.9) / (4.4 - 3.9);
+    sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 0.15) / (0.9 - 0.15);
+    std::cout << "olhO ESQ" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
 
 //    olho direito
-//    sensors[8] = 100 * ((points3d[37].y - points3d[41].y) - 0.25) / (1.0 - 0.25);
-//
+    sensors[8] = 100 * ((pointsFace[37].y - pointsFace[41].y) - 0.15) / (0.9 - 0.15);
+    std::cout << "olhO dir" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
     //boca aberta
-    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (3.5 - 0.25);
+    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (4.4 - 0.25);
+    std::cout << "boca aberta" << (pointsFace[61].y - pointsFace[64].y) << std::endl;
+    //boca fechada
+//    sensors[10] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 3.5) / (4.7 - 3.5);
 
-//    sensors[8] = 100 - sensors[8];
+//    sensors[10] = 100 - sensors[10];
+
+//    sensors[1] = 100 - sensors[1];
+
+    sensors[8] = 100 - sensors[8];
+    if (sensors[8] > 80)
+        sensors[8] = 100;
+    if (sensors[8] > 70)
+        sensors[8] = 80;
+    if (sensors[8] < 60)
+        sensors[8] = 0;
+
+    sensors[7] = 100 - sensors[7];
+    if (sensors[7] > 80)
+        sensors[7] = 100;
+    if (sensors[7] > 70)
+        sensors[7] = 80;
+    if (sensors[7] < 60)
+        sensors[7] = 0;
 //
 //    std::cout << sensors[8] << std::endl;
 
-    cv::Mat olhoD;
+//    cv::Mat olhoD;
 
 //    std::cout << (int)points[39].x - (int)points[36].x << "  " << (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) << (int)pointsCam1[36].x <<
 //            "  " << (int)pointsCam1[39].x << std::endl;
-    olhoD = grayScale(cv::Rect((int)points[36].x,(int)(capHeight - points[37].y),(int)points[39].x - (int)points[36].x +5,
-                               (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) +5));
-    if(!olhoD.empty())
-    cv::imshow("olhoD",olhoD);
-    cv::waitKey(50);
-
-    std::cout << cv::sum(olhoD)[0]/olhoD.total() << std:: endl;
+//    olhoD = grayScale(cv::Rect((int)points[36].x,(int)(capHeight - points[37].y),(int)points[39].x - (int)points[36].x +5,
+//                               (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) +5));
+//    if(!olhoD.empty())
+//    cv::imshow("olhoD",olhoD);
+//    cv::waitKey(50);
+//
+//    std::cout << cv::sum(olhoD)[0]/olhoD.total() << std:: endl;
 
 //    if(cv::sum(olhoD)[0]/olhoD.total() < 123)
 //        sensors[8] = 100;
