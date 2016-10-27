@@ -14,13 +14,14 @@ include(CreateLaunchers)
 include(MSVCMultipleProcessCompile) # /MP
 
 #OpenCV
-include_directories(/opt/opencv/opencv-2.4.13/release/include)
-set(OPENCV24_LIB /opt/opencv/opencv-2.4.13/release/lib)
+include_directories(/home/rodrigo/opencv-2.4_location/include)
+set(OPENCV24_LIB /home/rodrigo/opencv-2.4_location/lib)
 
 #FaceTracker
-include_directories(/opt/face-analysis-sdk-master/src)
-include_directories(/opt/face-analysis-sdk-master/build/src)
-set(FACE_ANALYSIS_LIB /opt/face-analysis-sdk-master/build/lib)
+include_directories(/home/rodrigo/face-analysis-sdk-master/src)
+include_directories(/home/rodrigo/face-analysis-sdk-master/build/src)
+set(FACE_ANALYSIS_LIB /home/rodrigo/face-analysis-sdk-master/build/lib)
+
 
 include_directories(
         external/AntTweakBar-1.16/include/
@@ -63,18 +64,6 @@ set(SOURCE_FILES
 add_executable(BlendShapesViewer ${SOURCE_FILES})
 target_link_libraries(BlendShapesViewer
         ${ALL_LIBS}
-        ${OPENCV24_LIB}/libopencv_highgui.so
-        ${OPENCV24_LIB}/libopencv_imgproc.so
-        ${OPENCV24_LIB}/libopencv_objdetect.so
-        ${OPENCV24_LIB}/libopencv_core.so
-        ${FACE_ANALYSIS_LIB}/libutilities.so
-        ${FACE_ANALYSIS_LIB}/libclmTracker.so
-        ${FACE_ANALYSIS_LIB}/libavatarAnim.so
-        )
-
-add_executable(TrackAndShow
-        src/applyTrackerAndShow.cpp)
-target_link_libraries(TrackAndShow
         ${OPENCV24_LIB}/libopencv_highgui.so
         ${OPENCV24_LIB}/libopencv_imgproc.so
         ${OPENCV24_LIB}/libopencv_objdetect.so

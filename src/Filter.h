@@ -24,11 +24,15 @@ private:
      * x[3] is the most recent sample point x[k]
      */
     float x[3];
+    float v[4];
 public:
 
     HanningFilter();
 
+    void updateP(float a, float b, float c, float d);
+
     float updateValue(float sample) override;
+
 
 
 };

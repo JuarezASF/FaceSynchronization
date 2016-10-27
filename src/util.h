@@ -29,8 +29,8 @@ bool startFaceTracker() {
 }
 
 bool startCapture(){
-    capture.at(0).open("video/out1.avi");
-    capture.at(1).open("video/out2.avi");
+    capture.at(0).open(1);
+    capture.at(1).open(2);
 
     if (!capture.at(0).isOpened() || !capture.at(1).isOpened()) {
         std::cerr << "cannot open camera!" << std::endl;
