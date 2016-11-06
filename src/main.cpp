@@ -204,12 +204,21 @@ int main(int argc, char **argv) {
         sliders[k] = (int) 0;
     }
     //initialize open cv windows for slide trackers
-    cvNamedWindow("Control0", CV_WINDOW_NORMAL);
-    cvNamedWindow("Control1", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("Shapes", CV_WINDOW_NORMAL);
+    cv::moveWindow("Shapes", 0, 0);
+
     cvNamedWindow("FilterControl", CV_WINDOW_KEEPRATIO);
+    cv::moveWindow("FilterControl", 100, 0);
+
     cvNamedWindow("GainWindow", CV_WINDOW_KEEPRATIO);
+    cv::moveWindow("GainWindow", 200, 0);
+
     cvNamedWindow("OffsetWindow", CV_WINDOW_KEEPRATIO);
+    cv::moveWindow("OffsetWindow", 300, 0);
+
     cvNamedWindow("Input#1", CV_WINDOW_KEEPRATIO);
+    cv::moveWindow("Input#1", 400, 400);
+
 
     //initialize filters
 
@@ -480,10 +489,9 @@ int main(int argc, char **argv) {
 
 
     //initialize sliders
-    int qtdPerControlWindow = 8;
     int sliderIdx = 0;
     for (auto poseName : keyPoseNames) {
-        std::string windowName = "Control" + std::to_string((int) (sliderIdx * 1.0 / qtdPerControlWindow));
+        std::string windowName = "Shapes";
         cvCreateTrackbar(poseName.c_str(), windowName.c_str(), sliders + (sliderIdx++), alpha_slider_max, nullptr);
     }
 
@@ -499,6 +507,7 @@ int main(int argc, char **argv) {
     }
 
     window = glfwCreateWindow(width, height, "Obj viewer", NULL, NULL);
+    glfwSetWindowPos(window, 400, 0);
     if (window == NULL) {
         std::cerr << "Failed to open GLFW window. " << std::endl;
         glfwTerminate();

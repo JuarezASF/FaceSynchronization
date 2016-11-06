@@ -10,8 +10,12 @@ Object drawObject;
 std::vector<Object> keyObjects;
 std::vector<tinyobj::shape_t> firstModelShapes;
 
-int width = 768;
-int height = 768;
+//original
+//int width = 768;
+//int height = 768;
+
+int width = 420;
+int height = 360;
 
 double prevMouseX, prevMouseY;
 bool mouseLeftPressed;
