@@ -32,7 +32,7 @@ float HanningFilter::updateValue(float sample) {
 
 }
 
-WindowFilter::WindowFilter(int sizeOfFilter, float *coefficients) {
+WindowFilter::WindowFilter(int sizeOfFilter, double *coefficients) {
     this->x = nullptr;
     this->coefficients = nullptr;
     construct(sizeOfFilter, coefficients);
@@ -42,7 +42,7 @@ float WindowFilter::updateValue(float sample) {
     for (int i = 0; i < sizeOfFilter - 1; i++)
         x[i] = x[i + 1];
 
-    x[sizeOfFilter - 1] = sample;
+    x[sizeOfFilter - 1] = (double)sample;
 
     float output = 0;
 
@@ -57,13 +57,13 @@ WindowFilter::~WindowFilter() {
         delete this->x;
 }
 
-void WindowFilter::construct(int sizeOfFilter, float *coefficients) {
+void WindowFilter::construct(int sizeOfFilter, double *coefficients) {
     if (this->x != nullptr)
         delete this->x;
 
     this->sizeOfFilter = sizeOfFilter;
     this->coefficients = coefficients;
-    this->x = new float[sizeOfFilter];
+    this->x = new double[sizeOfFilter];
 
     for (int i = 0; i < sizeOfFilter; i++)
         this->x[i] = 0.0f;
@@ -75,13 +75,13 @@ WindowFilter::WindowFilter() {
     this->coefficients = nullptr;
 }
 
-void WindowFilter::updateCoefficients(int size, float *coeff) {
+void WindowFilter::updateCoefficients(int size, double *coeff) {
     this->sizeOfFilter = size;
 
     if (this->x != nullptr)
         delete this->x;
 
-    this->x = new float[size];
+    this->x = new double[size];
 
     this->coefficients = coeff;
     for (int i = 0; i < sizeOfFilter; i++)

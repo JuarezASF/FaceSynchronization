@@ -39,10 +39,10 @@ public:
 class WindowFilter : public Filter {
 private:
     int sizeOfFilter;
-    float *x, *coefficients;
+    double *x, *coefficients;
 public:
 
-    WindowFilter(int sizeOfFilter, float *coefficients);
+    WindowFilter(int sizeOfFilter, double *coefficients);
 
     WindowFilter();
 
@@ -50,9 +50,9 @@ public:
 
     float updateValue(float sample) override;
 
-    void construct(int sizeOfFilter, float *coefficients);
+    void construct(int sizeOfFilter, double *coefficients);
 
-    void updateCoefficients(int size, float *coeff);
+    void updateCoefficients(int size, double *coeff);
 
 
 };
