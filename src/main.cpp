@@ -142,6 +142,21 @@ std::map<int, int> sensorToDefaultFilterConfig = {
         {8, 3}
 };
 
+std::map<int, std::string> sensorToNameMap = {
+        {0, "neutro"},
+        {1, "feliz"},
+        {2, "bravo"},
+        {3, "left cheek"},
+        {4, "right cheek"},
+        {5, "left eyebrow"},
+        {6, "right eyebrow"},
+        {7, "left eye"},
+        {8, "right eye"},
+        {9, "open mouth"},
+        {10, "close mouth"},
+        {11, "nose"},
+};
+
 
 int main(int argc, char **argv) {
 
@@ -409,13 +424,13 @@ int main(int argc, char **argv) {
             const int defaultValue = sensorToDefaultFilterConfig[k];
             filterUsedForSensor[k] = defaultValue;
         } else {
-            filterUsedForSensor[k] = 2;
+            filterUsedForSensor[k] = 4;
 
         }
 
         indices[k] = k;
         filters[k] = WindowFilter(sizeOfFilter[filterUsedForSensor[k]], filterConfigurations[filterUsedForSensor[k]]);
-        std::string trackName = "sensor " + std::to_string(k);
+        std::string trackName = "sensor on " + sensorToNameMap[k];
 
         cv::createTrackbar(trackName.c_str(), "FilterControl", &filterUsedForSensor[k],
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
@@ -574,6 +589,7 @@ bool updateTracking() {
 
         //draw point on input frame
         for (auto p : points) {
+            // uncomment if you want to print tracker number
 //            putText(frame, std::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
             count++;
             cv::circle(frame, p, 1, cv::Scalar(255, 0, 0));
@@ -697,6 +713,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 }
 
 void updateFilter(int configuration, void *userData) {
+    //make sure we don't modify filters while they are being read/updated
     std::lock_guard<std::mutex> guard(sensorsConfigurationLock);
 
     int filterToUpdate = *((int *) (userData));
