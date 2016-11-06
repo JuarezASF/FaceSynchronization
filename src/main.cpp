@@ -290,7 +290,7 @@ void updateTracking() {
                 pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
 
                 points3d[i].z = f1 * f2 * b / (pointsCam1[i].x * f2 - points[i].x * f1);
-                points3d[i].x = (pointsCam1[i].x / f1 + points[i].x / f2) * points3d[i].z / 2;
+                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2 + b)) * points3d[i].z / 2;
                 points3d[i].y = (pointsCam1[i].y / f1 + points[i].y / f2) * points3d[i].z / 2;
             }
         }
