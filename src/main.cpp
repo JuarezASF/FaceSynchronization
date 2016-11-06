@@ -20,6 +20,7 @@
 
 
 #include <sys/time.h>
+#include <mutex>
 
 #define HIGHRES 0
 
@@ -89,7 +90,7 @@ double *sensors = new double[quantityOfSensors];
 
 
 bool useFilter = true;
-std::vector<HanningFilter> filters(quantityOfSensors);
+WindowFilter *filters;
 
 int alpha_slider_max = 150;
 
@@ -114,10 +115,21 @@ double b = 18;
 double capHeight;
 
 
+int quantityOfFilterConfigurations;
+int *sizeOfFilter;
+float **filterConfigurations;
+int *filterUsedForSensor;
+int *indices;
+
+
+bool mustUpdateFilters = false;
+
+// to protect modifications on sensor configuration
+std::mutex sensorsConfigurationLock;
+void updateFilter(int configuration, void *userData);
+
 
 int main(int argc, char **argv) {
-
-
 
     if (!startFaceTracker()) {
         return 0;
@@ -131,11 +143,42 @@ int main(int argc, char **argv) {
         weight[k] = 0.0;
         sliders[k] = (int) 0;
     }
-
     //initialize open cv windows for slide trackers
     cvNamedWindow("Control0", CV_WINDOW_NORMAL);
     cvNamedWindow("Control1", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("FilterControl", CV_WINDOW_KEEPRATIO);
     cvNamedWindow("Input#1", CV_WINDOW_KEEPRATIO);
+
+    //initialize filters
+
+    quantityOfFilterConfigurations = 3;
+    filterConfigurations = new float *[quantityOfFilterConfigurations];
+    sizeOfFilter = new int[quantityOfFilterConfigurations];
+
+    filterConfigurations[0] = new float[1]{1.0};
+    sizeOfFilter[0] = 1;
+
+    filterConfigurations[1] = new float[5]{0.0, 0.3183, 0.5000, 0.3183, 0.0000};
+    sizeOfFilter[1] = 5;
+
+    filterConfigurations[2] = new float[3]{0.25, 0.5, 0.25};
+    sizeOfFilter[2] = 3;
+
+    filters = new WindowFilter[quantityOfSensors];
+    filterUsedForSensor = new int[quantityOfSensors];
+    indices = new int[quantityOfSensors];
+
+    for (int k = 0; k < quantityOfSensors; k++) {
+        filterUsedForSensor[k] = 0;
+        indices[k] = k;
+        filters[k] = WindowFilter(sizeOfFilter[filterUsedForSensor[k]], filterConfigurations[filterUsedForSensor[k]]);
+        std::string trackName = "sensor " + std::to_string(k);
+
+        cv::createTrackbar(trackName.c_str(), "FilterControl", 0,
+                           quantityOfFilterConfigurations - 1, updateFilter, indices + k);
+
+    }
+
 
     //initialize sliders
     int qtdPerControlWindow = 8;
@@ -144,6 +187,7 @@ int main(int argc, char **argv) {
         std::string windowName = "Control" + std::to_string((int) (sliderIdx * 1.0 / qtdPerControlWindow));
         cvCreateTrackbar(poseName.c_str(), windowName.c_str(), sliders + (sliderIdx++), alpha_slider_max, nullptr);
     }
+
 
     //very important to give it some time to start!
     cvWaitKey(100);
@@ -203,8 +247,6 @@ int main(int argc, char **argv) {
     }
 
     /////////////////////////////////
-    filters[8].updateP(4.0f, 1.0f, 1.0f, 0.16f);
-    filters[8].updateP(4.0f, 1.0f, 1.0f, 0.16f);
 
     /////////////////////////////////
 
@@ -252,7 +294,7 @@ void updateTracking() {
     for (auto cap : capture) {
 
         cap >> frame;
-        if(frame.empty()){
+        if (frame.empty()) {
             std::cout << "end of video reached!" << std::endl;
         }
 
@@ -281,7 +323,7 @@ void updateTracking() {
         points3dOld = points3d;
 
 
-        if (cameraNum == 1){
+        if (cameraNum == 1) {
             pointsCam1 = points;
             imshow("Input#" + std::to_string(cameraNum), frame);
 
@@ -298,15 +340,6 @@ void updateTracking() {
             }
         }
 
-//            if(!points3dOld.empty())
-//                for(int i = 0; i < points3d.size(); i++)
-//                {
-//                    points3dDiff[i] = points3d[i] - points3dOld[i];
-//                }
-
-        std::cout << "diff " << points3d[54].x - points3d[48].x << std::endl;
-        // Z = f1*f2*b/(x1*f2 - x2*f1);
-
         cameraNum++;
     }
 }
@@ -315,19 +348,23 @@ void updateTracking() {
 void update() {
 
     float weightSum = 0;
+    std::lock_guard<std::mutex>  guard(sensorsConfigurationLock);
+    //skip sensort 0 ( for neutral pose)
     for (int i = 1; i < quantityOfSensors; i++) {
         float measurement;
 
+        float sensorValue = (float) sensors[i];
         if (useFilter) {
-            measurement = filters[i].updateValue((float) sensors[i]);
+            measurement = filters[i].updateValue(sensorValue);
         }
         else {
-            measurement = (float) sensors[i];
+            measurement = sensorValue;
         }
 
         weight[i] = measurement / 100.0f;
         weightSum += weight[i];
     }
+    guard.~lock_guard();
 
     weight[0] = 1.0f - weightSum;
 
@@ -347,34 +384,28 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     for (int i = 0; i < quantityOfPoses; i++)
         sensors[i] = sliders[i];
 
-
-//    sorriso
+    //sorriso
     sensors[1] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 5.5) / (7.2 - 5.5);
 
     //sobrancelha esquerda
     sensors[5] = 100 * ((pointsFace[25].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-    std::cout << "sombra esq" << (pointsFace[25].y - pointsFace[27].y) << std::endl;
+//    std::cout << "sombra esq" << (pointsFace[25].y - pointsFace[27].y) << std::endl;
 
     //sobrancelha direita
     sensors[6] = 100 * ((pointsFace[18].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-    std::cout << "sombra dir" << (pointsFace[18].y - pointsFace[27].y) << std::endl;
+//    std::cout << "sombra dir" << (pointsFace[18].y - pointsFace[27].y) << std::endl;
 
     //olho esquerdo
     sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 0.15) / (0.9 - 0.15);
-    std::cout << "olhO ESQ" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
+//    std::cout << "olhO ESQ" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
 
-//    olho direito
+    //olho direito
     sensors[8] = 100 * ((pointsFace[37].y - pointsFace[41].y) - 0.15) / (0.9 - 0.15);
-    std::cout << "olhO dir" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
+//    std::cout << "olhO dir" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
+
     //boca aberta
     sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (4.4 - 0.25);
-    std::cout << "boca aberta" << (pointsFace[61].y - pointsFace[64].y) << std::endl;
-    //boca fechada
-//    sensors[10] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 3.5) / (4.7 - 3.5);
-
-//    sensors[10] = 100 - sensors[10];
-
-//    sensors[1] = 100 - sensors[1];
+//    std::cout << "boca aberta" << (pointsFace[61].y - pointsFace[64].y) << std::endl;
 
     sensors[8] = 100 - sensors[8];
     if (sensors[8] > 80)
@@ -391,26 +422,6 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         sensors[7] = 80;
     if (sensors[7] < 60)
         sensors[7] = 0;
-//
-//    std::cout << sensors[8] << std::endl;
-
-//    cv::Mat olhoD;
-
-//    std::cout << (int)points[39].x - (int)points[36].x << "  " << (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) << (int)pointsCam1[36].x <<
-//            "  " << (int)pointsCam1[39].x << std::endl;
-//    olhoD = grayScale(cv::Rect((int)points[36].x,(int)(capHeight - points[37].y),(int)points[39].x - (int)points[36].x +5,
-//                               (int)(capHeight - points[41].y) - (int)(capHeight - points[37].y) +5));
-//    if(!olhoD.empty())
-//    cv::imshow("olhoD",olhoD);
-//    cv::waitKey(50);
-//
-//    std::cout << cv::sum(olhoD)[0]/olhoD.total() << std:: endl;
-
-//    if(cv::sum(olhoD)[0]/olhoD.total() < 123)
-//        sensors[8] = 100;
-//    else
-//        sensors[8] = 0;
-
 
     //fix problems
     for (int i = 0; i < quantityOfSensors; i++) {
@@ -419,6 +430,21 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         if (sensors[i] < 0)
             sensors[i] = 0;
     }
+}
+
+void updateFilter(int configuration, void *userData) {
+    std::lock_guard<std::mutex>  guard(sensorsConfigurationLock);
+
+    int filterToUpdate = *((int *) (userData));
+
+    std::cout << "Changing filter on sensor: " << filterToUpdate << " to configuration:" << configuration << "...";
+
+
+    filterUsedForSensor[filterToUpdate] = configuration;
+
+    filters[filterToUpdate].updateCoefficients(sizeOfFilter[configuration], filterConfigurations[configuration]);
+
+    std::cout << "[DONE]" << std::endl;
 
 }
 

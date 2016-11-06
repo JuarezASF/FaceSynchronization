@@ -44,9 +44,15 @@ public:
 
     WindowFilter(int sizeOfFilter, float *coefficients);
 
+    WindowFilter();
+
     virtual ~WindowFilter();
 
     float updateValue(float sample) override;
+
+    void construct(int sizeOfFilter, float *coefficients);
+
+    void updateCoefficients(int size, float *coeff);
 
 
 };
