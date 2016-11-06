@@ -758,7 +758,8 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 
 
     // truncates at 100 and 0 all sensors
-    for (int i = 0; i < QUANTITY_SENSORS; i++) {
+    for(int k = 0; k < quantityOfUsedSensors; k++){
+        int i = usedSensors[k];
         if (sensors[i] > alpha_slider_max)
             sensors[i] = alpha_slider_max;
         if (sensors[i] < 0)
