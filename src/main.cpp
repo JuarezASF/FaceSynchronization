@@ -651,37 +651,18 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     for (int i = 0; i < quantityOfPoses; i++)
         sensors[i] = sliders[i];
 
-    //sorriso
+    //smile
     sensors[1] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 5.5) / (7.2 - 5.5);
 
-    //sobrancelha esquerda
+    //left eyebrow
     sensors[5] = 100 * ((pointsFace[25].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-//    std::cout << "sombra esq" << (pointsFace[25].y - pointsFace[27].y) << std::endl;
 
-    //sobrancelha direita
+    //right eyebrow
     sensors[6] = 100 * ((pointsFace[18].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-//    std::cout << "sombra dir" << (pointsFace[18].y - pointsFace[27].y) << std::endl;
 
-    //olho esquerdo
+    //left eye
     sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 0.15) / (0.9 - 0.15);
-//    std::cout << "olhO ESQ" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
-
-    //olho direito
-    sensors[8] = 100 * ((pointsFace[37].y - pointsFace[41].y) - 0.15) / (0.9 - 0.15);
-//    std::cout << "olhO dir" << (pointsFace[37].y - pointsFace[41].y) << std::endl;
-
-    //boca aberta
-    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (4.4 - 0.25);
-//    std::cout << "boca aberta" << (pointsFace[61].y - pointsFace[64].y) << std::endl;
-
-    sensors[8] = 100 - sensors[8];
-    if (sensors[8] > 80)
-        sensors[8] = 100;
-    if (sensors[8] > 70)
-        sensors[8] = 80;
-    if (sensors[8] < 60)
-        sensors[8] = 0;
-
+    //trick to improve left eye
     sensors[7] = 100 - sensors[7];
     if (sensors[7] > 80)
         sensors[7] = 100;
@@ -690,7 +671,23 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     if (sensors[7] < 60)
         sensors[7] = 0;
 
-    //fix problems
+    //right eye
+    sensors[8] = 100 * ((pointsFace[37].y - pointsFace[41].y) - 0.15) / (0.9 - 0.15);
+    //trick to improve right eye
+    sensors[8] = 100 - sensors[8];
+    if (sensors[8] > 80)
+        sensors[8] = 100;
+    if (sensors[8] > 70)
+        sensors[8] = 80;
+    if (sensors[8] < 60)
+        sensors[8] = 0;
+
+    //open mouth
+    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (4.4 - 0.25);
+
+
+
+    // truncates at 100 and 0
     for (int i = 0; i < quantityOfSensors; i++) {
         if (sensors[i] > alpha_slider_max)
             sensors[i] = alpha_slider_max;
