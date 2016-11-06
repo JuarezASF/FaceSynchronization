@@ -93,4 +93,31 @@ target_link_libraries(TrackAndShow
         ${FACE_ANALYSIS_LIB}/libutilities.so
         ${FACE_ANALYSIS_LIB}/libclmTracker.so
         ${FACE_ANALYSIS_LIB}/libavatarAnim.so
-        ) 
+        )
+
+
+
+set(SOURCE_FILES2
+        src/BlendShapeDemo.cpp
+        src/trackball.cc
+        src/display.h
+        src/display.cpp
+        src/global.h
+        src/global.cpp
+        src/DrawObject.cpp
+        src/DrawObject.h
+        src/structs.h
+        src/Filter.cpp
+        src/Filter.h
+        src/util.h)
+add_executable(BlendShapesDemo ${SOURCE_FILES2})
+target_link_libraries(BlendShapesDemo
+        ${ALL_LIBS}
+        ${OPENCV24_LIB}/libopencv_highgui.so
+        ${OPENCV24_LIB}/libopencv_imgproc.so
+        ${OPENCV24_LIB}/libopencv_objdetect.so
+        ${OPENCV24_LIB}/libopencv_core.so
+        ${FACE_ANALYSIS_LIB}/libutilities.so
+        ${FACE_ANALYSIS_LIB}/libclmTracker.so
+        ${FACE_ANALYSIS_LIB}/libavatarAnim.so
+        )

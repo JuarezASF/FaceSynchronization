@@ -27,6 +27,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 }
 
 vector<string> callibFiles = {
+        "input.png",
         "img/mouth-opened.jpg",
         "img/mouth-duck.jpg",
         "img/mouth-smile.jpg",
@@ -79,7 +80,8 @@ int main(int argc, char **argv) {
 
         //draw point on input frame
         for (auto p : points) {
-            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
+//            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
+            circle(img, p, 8, cv::Scalar(0, 0, 255), 3);
             count++;
         }
 
