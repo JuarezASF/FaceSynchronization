@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 
 #include <GL/glew.h>
 
@@ -13,6 +14,7 @@
 #include "display.h"
 #include "util.h"
 #include "Filter.h"
+#include <map>
 
 #include <opencv2/highgui.hpp>
 
@@ -98,7 +100,7 @@ void update();
 
 void updateSensors(std::vector<cv::Point3d> pointsFace);
 
-void updateTracking();
+bool updateTracking();
 
 float t = 0.0f;
 
@@ -126,7 +128,19 @@ bool mustUpdateFilters = false;
 
 // to protect modifications on sensor configuration
 std::mutex sensorsConfigurationLock;
+
 void updateFilter(int configuration, void *userData);
+
+//to produce sensor/filter graph
+std::vector<float> sensorOutput;
+std::vector<float> filterOutput;
+
+int SENSOR_TO_TRACK = 5;
+
+std::map<int, int> sensorToDefaultFilterConfig = {
+        {7, 3},
+        {8, 3}
+};
 
 
 int main(int argc, char **argv) {
@@ -151,7 +165,7 @@ int main(int argc, char **argv) {
 
     //initialize filters
 
-    quantityOfFilterConfigurations = 3;
+    quantityOfFilterConfigurations = 4;
     filterConfigurations = new float *[quantityOfFilterConfigurations];
     sizeOfFilter = new int[quantityOfFilterConfigurations];
 
@@ -164,17 +178,27 @@ int main(int argc, char **argv) {
     filterConfigurations[2] = new float[3]{0.25, 0.5, 0.25};
     sizeOfFilter[2] = 3;
 
+    filterConfigurations[3] = new float[4]{0.64f, 0.16f, 0.16f};
+    sizeOfFilter[3] = 3;
+
     filters = new WindowFilter[quantityOfSensors];
     filterUsedForSensor = new int[quantityOfSensors];
     indices = new int[quantityOfSensors];
 
     for (int k = 0; k < quantityOfSensors; k++) {
-        filterUsedForSensor[k] = 0;
+        if (sensorToDefaultFilterConfig.find(k) != sensorToDefaultFilterConfig.end()) {
+            const int defaultValue = sensorToDefaultFilterConfig[k];
+            filterUsedForSensor[k] = defaultValue;
+        } else {
+            filterUsedForSensor[k] = 2;
+
+        }
+
         indices[k] = k;
         filters[k] = WindowFilter(sizeOfFilter[filterUsedForSensor[k]], filterConfigurations[filterUsedForSensor[k]]);
         std::string trackName = "sensor " + std::to_string(k);
 
-        cv::createTrackbar(trackName.c_str(), "FilterControl", 0,
+        cv::createTrackbar(trackName.c_str(), "FilterControl", &filterUsedForSensor[k],
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
 
     }
@@ -251,7 +275,10 @@ int main(int argc, char **argv) {
     /////////////////////////////////
 
     while (glfwWindowShouldClose(window) == GL_FALSE) {
-        updateTracking();
+        if (!updateTracking()) {
+            std::cout << "Finishing execution due to end of video" << std::endl;
+            break;
+        }
 
         updateSensors(points3d);
 
@@ -285,9 +312,22 @@ int main(int argc, char **argv) {
     }
 
     glfwTerminate();
+
+    std::string dataFileName = "data.txt";
+    std::cout << "writing sensor data to:" << dataFileName << std::endl;
+
+    std::ofstream f;
+    f.open(dataFileName);
+
+    unsigned long quantityOfSamples = filterOutput.size();
+    for (int i = 0; i < quantityOfSamples; i++) {
+        f << i << "\t" << sensorOutput[i] << "\t" << filterOutput[i] << std::endl;
+    }
+    f.close();
+
 }
 
-void updateTracking() {
+bool updateTracking() {
     int detectionQuality;
     int cameraNum = 1;
 
@@ -296,6 +336,7 @@ void updateTracking() {
         cap >> frame;
         if (frame.empty()) {
             std::cout << "end of video reached!" << std::endl;
+            return false;
         }
 
         cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
@@ -342,13 +383,15 @@ void updateTracking() {
 
         cameraNum++;
     }
+
+    return true;
 }
 
 
 void update() {
 
     float weightSum = 0;
-    std::lock_guard<std::mutex>  guard(sensorsConfigurationLock);
+    std::lock_guard<std::mutex> guard(sensorsConfigurationLock);
     //skip sensort 0 ( for neutral pose)
     for (int i = 1; i < quantityOfSensors; i++) {
         float measurement;
@@ -359,6 +402,11 @@ void update() {
         }
         else {
             measurement = sensorValue;
+        }
+
+        if (i == SENSOR_TO_TRACK) {
+            sensorOutput.push_back(sensorValue);
+            filterOutput.push_back(measurement);
         }
 
         weight[i] = measurement / 100.0f;
@@ -433,7 +481,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 }
 
 void updateFilter(int configuration, void *userData) {
-    std::lock_guard<std::mutex>  guard(sensorsConfigurationLock);
+    std::lock_guard<std::mutex> guard(sensorsConfigurationLock);
 
     int filterToUpdate = *((int *) (userData));
 
