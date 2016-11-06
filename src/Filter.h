@@ -34,6 +34,20 @@ public:
     float updateValue(float sample) override;
 
 
+};
+
+class WindowFilter : public Filter {
+private:
+    int sizeOfFilter;
+    float *x, *coefficients;
+public:
+
+    WindowFilter(int sizeOfFilter, float *coefficients);
+
+    virtual ~WindowFilter();
+
+    float updateValue(float sample) override;
+
 
 };
 

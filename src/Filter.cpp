@@ -31,3 +31,38 @@ float HanningFilter::updateValue(float sample) {
 
 
 }
+
+WindowFilter::WindowFilter(int sizeOfFilter, float *coefficients) {
+
+    this->sizeOfFilter = sizeOfFilter;
+    this->coefficients = coefficients;
+    this->x = new float[sizeOfFilter];
+
+}
+
+float WindowFilter::updateValue(float sample) {
+    x[0] = x[1];
+    x[1] = x[2];
+    x[2] = sample;
+
+    for(int i = 0; i < sizeOfFilter - 1; i++ )
+        x[i] = x[i+1];
+
+    x[sizeOfFilter - 1] = sample;
+
+    float output = 0;
+
+    for(int i = 0; i < sizeOfFilter - 1; i++ )
+        output += x[i] * coefficients[i];
+
+    return output;
+}
+
+WindowFilter::~WindowFilter() {
+    delete[] this->x;
+}
+
+
+
+
+
