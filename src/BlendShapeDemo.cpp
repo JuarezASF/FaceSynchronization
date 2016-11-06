@@ -16,7 +16,7 @@
 #define HIGHRES 0
 
 #if HIGHRES > 0
-int quantityOfPoses = 8;
+int QUANTITY_POSES = 8;
 std::vector<std::string> keyPoseFiles = {
         "obj/Rosto_HD.OBJ",
         "obj/Rosto_HD.OBJ",

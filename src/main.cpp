@@ -27,7 +27,7 @@
 #define HIGHRES 0
 
 #if HIGHRES > 0
-int quantityOfPoses = 8;
+#define QUANTITY_POSES  8
 std::vector<std::string> keyPoseFiles = {
         "obj/Rosto_HD.OBJ",
         "obj/Rosto_HD.OBJ",
@@ -51,7 +51,9 @@ std::vector<std::string> keyPoseNames = {
 };
 
 #else
-int quantityOfPoses = 12;
+#define QUANTITY_POSES 12
+#define QUANTITY_SENSORS QUANTITY_POSES
+
 std::vector<std::string> keyPoseFiles = {
         "obj/rosto_neutro.obj",
         "obj/rosto_feliz.obj",
@@ -84,11 +86,10 @@ std::vector<std::string> keyPoseNames = {
 
 #endif
 
-int quantityOfSensors = quantityOfPoses;
 
-int *sliders = new int[quantityOfPoses];
-float *weight = new float[quantityOfPoses];
-double *sensors = new double[quantityOfSensors];
+int *sliders = new int[QUANTITY_POSES];
+float *weight = new float[QUANTITY_POSES];
+double *sensors = new double[QUANTITY_SENSORS];
 
 
 bool useFilter = true;
@@ -157,6 +158,36 @@ std::map<int, std::string> sensorToNameMap = {
         {11, "nose"},
 };
 
+int *sensortOffsets = new int[QUANTITY_SENSORS]{
+        0,
+        55,
+        0,
+        0,
+        0,
+        22,
+        22,
+        15,
+        15,
+        25,
+        0,
+        0
+};
+
+int *sensortGains = new int[QUANTITY_SENSORS]{
+        0,
+        83,
+        0,
+        0,
+        0,
+        91,
+        91,
+        133,
+        133,
+        24,
+        0,
+        0
+
+};
 
 int main(int argc, char **argv) {
 
@@ -168,7 +199,7 @@ int main(int argc, char **argv) {
     };
 
     //zero out weights
-    for (int k = 0; k < quantityOfPoses; k++) {
+    for (int k = 0; k < QUANTITY_POSES; k++) {
         weight[k] = 0.0;
         sliders[k] = (int) 0;
     }
@@ -176,6 +207,8 @@ int main(int argc, char **argv) {
     cvNamedWindow("Control0", CV_WINDOW_NORMAL);
     cvNamedWindow("Control1", CV_WINDOW_KEEPRATIO);
     cvNamedWindow("FilterControl", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("GainWindow", CV_WINDOW_KEEPRATIO);
+    cvNamedWindow("OffsetWindow", CV_WINDOW_KEEPRATIO);
     cvNamedWindow("Input#1", CV_WINDOW_KEEPRATIO);
 
     //initialize filters
@@ -415,11 +448,11 @@ int main(int argc, char **argv) {
     sizeOfFilter[12] = 17;
 
 
-    filters = new WindowFilter[quantityOfSensors];
-    filterUsedForSensor = new int[quantityOfSensors];
-    indices = new int[quantityOfSensors];
+    filters = new WindowFilter[QUANTITY_SENSORS];
+    filterUsedForSensor = new int[QUANTITY_SENSORS];
+    indices = new int[QUANTITY_SENSORS];
 
-    for (int k = 0; k < quantityOfSensors; k++) {
+    for (int k = 0; k < QUANTITY_SENSORS; k++) {
         if (sensorToDefaultFilterConfig.find(k) != sensorToDefaultFilterConfig.end()) {
             const int defaultValue = sensorToDefaultFilterConfig[k];
             filterUsedForSensor[k] = defaultValue;
@@ -434,6 +467,14 @@ int main(int argc, char **argv) {
 
         cv::createTrackbar(trackName.c_str(), "FilterControl", &filterUsedForSensor[k],
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
+
+        trackName = "offset on " + sensorToNameMap[k];
+        cv::createTrackbar(trackName.c_str(), "OffsetWindow", &sensortOffsets[k],
+                           100, nullptr, nullptr);
+
+        trackName = "gain on " + sensorToNameMap[k];
+        cv::createTrackbar(trackName.c_str(), "GainWindow", &sensortGains[k],
+                           200, nullptr, nullptr);
 
     }
 
@@ -628,7 +669,7 @@ void update() {
     float weightSum = 0;
     std::lock_guard<std::mutex> guard(sensorsConfigurationLock);
     //skip sensort 0 ( for neutral pose)
-    for (int i = 1; i < quantityOfSensors; i++) {
+    for (int i = 1; i < QUANTITY_SENSORS; i++) {
         float measurement;
 
         float sensorValue = (float) sensors[i];
@@ -655,29 +696,40 @@ void update() {
     for (int i = 0; i < drawObject.size(); i++) {
         for (int j = 0; j < drawObject[i].attributes.size(); j++) {
             drawObject[i].attributes[j] = 0.0;
-            for (int k = 0; k < quantityOfSensors; k++) {
+            for (int k = 0; k < QUANTITY_SENSORS; k++) {
                 drawObject[i].attributes[j] += weight[k] * keyObjects[k][i].attributes[j];
             }
         }
     }
 }
 
+int quantityOfUsedSensors = 6;
+int usedSensors[6] = {1, 5, 6, 7, 8, 9};
+
 void updateSensors(std::vector<cv::Point3d> pointsFace) {
     //default behavior for sensors is to follow tracker
-    for (int i = 0; i < quantityOfPoses; i++)
+    for (int i = 0; i < QUANTITY_POSES; i++)
         sensors[i] = sliders[i];
 
     //smile
-    sensors[1] = 100 * ((pointsFace[54].x - pointsFace[48].x) - 5.5) / (7.2 - 5.5);
-
+    sensors[1] = pointsFace[54].x - pointsFace[48].x;
     //left eyebrow
-    sensors[5] = 100 * ((pointsFace[25].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-
+    sensors[5] = pointsFace[25].y - pointsFace[27].y;
     //right eyebrow
-    sensors[6] = 100 * ((pointsFace[18].y - pointsFace[27].y) - 2.2) / (3.3 - 2.2);
-
+    sensors[6] = pointsFace[18].y - pointsFace[27].y;
     //left eye
-    sensors[7] = 100 * ((points3d[37].y - points3d[41].y) - 0.15) / (0.9 - 0.15);
+    sensors[7] = points3d[37].y - points3d[41].y;
+    //right eye
+    sensors[8] = pointsFace[37].y - pointsFace[41].y;
+    //open mouth
+    sensors[9] = pointsFace[61].y - pointsFace[64].y;
+
+    for(int k = 0; k < quantityOfUsedSensors; k++){
+        int i = usedSensors[k];
+        sensors[i] = 100.0 * (sensors[i] - sensortOffsets[i]/100.0) *  sensortGains[i]/200.0;
+    }
+
+
     //trick to improve left eye
     sensors[7] = 100 - sensors[7];
     if (sensors[7] > 80)
@@ -686,9 +738,6 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         sensors[7] = 80;
     if (sensors[7] < 60)
         sensors[7] = 0;
-
-    //right eye
-    sensors[8] = 100 * ((pointsFace[37].y - pointsFace[41].y) - 0.15) / (0.9 - 0.15);
     //trick to improve right eye
     sensors[8] = 100 - sensors[8];
     if (sensors[8] > 80)
@@ -698,13 +747,9 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     if (sensors[8] < 60)
         sensors[8] = 0;
 
-    //open mouth
-    sensors[9] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.25) / (4.4 - 0.25);
 
-
-
-    // truncates at 100 and 0
-    for (int i = 0; i < quantityOfSensors; i++) {
+    // truncates at 100 and 0 all sensors
+    for (int i = 0; i < QUANTITY_SENSORS; i++) {
         if (sensors[i] > alpha_slider_max)
             sensors[i] = alpha_slider_max;
         if (sensors[i] < 0)
