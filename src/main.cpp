@@ -160,30 +160,30 @@ std::map<int, std::string> sensorToNameMap = {
 
 int *d_min = new int[QUANTITY_SENSORS]{
         0,
-        55,
+        59,
         0,
         0,
         0,
-        30,
-        30,
+        24,
+        24,
         2,
         2,
-        10,
+        3,
         0,
         0
 };
 
 int *d_max = new int[QUANTITY_SENSORS]{
         0,
-        50,
+        79,
         0,
         0,
         0,
-        50,
-        50,
+        37,
+        36,
         200,
         200,
-        70,
+        43,
         0,
         0
 
@@ -739,6 +739,13 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     //open mouth
     sensors[9] = fabs(pointsFace[61].y - pointsFace[64].y);
 
+//    std::cout << "smile: " << sensors[1] << std::endl;
+    std::cout << "left eyebrow: " << sensors[5] << std::endl;
+//    std::cout << "right eyebrow: " << sensors[6] << std::endl;
+//    std::cout << "left eye: " << sensors[7] << std::endl;
+//    std::cout << "right eye: " << sensors[8] << std::endl;
+//    std::cout << "open mouth: " << sensors[9] << std::endl;
+
     for(int k = 0; k < quantityOfUsedSensors; k++){
         int i = usedSensors[k];
         sensors[i] = 100.0 * (sensors[i] - d_min[i]/10.0) *  1/((d_max[i] - d_min[i])/10.0);
@@ -762,7 +769,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     if (sensors[8] < 60)
         sensors[8] = 0;
 
-    std::cout << pointsFace[19].y - pointsFace[39].y << " 7 " << sensors[7] << " 8 " << sensors[8] << std:: endl;
+//    std::cout << pointsFace[24].y - pointsFace[42].y << " 7 " << sensors[7] << " 8 " << sensors[8] << std:: endl;
 
 
     // truncates at 100 and 0 all sensors
