@@ -158,32 +158,32 @@ std::map<int, std::string> sensorToNameMap = {
         {11, "nose"},
 };
 
-int *sensortOffsets = new int[QUANTITY_SENSORS]{
+int *d_min = new int[QUANTITY_SENSORS]{
         0,
         55,
         0,
         0,
         0,
-        22,
-        22,
-        15,
-        15,
-        25,
+        30,
+        30,
+        2,
+        2,
+        10,
         0,
         0
 };
 
-int *sensortGains = new int[QUANTITY_SENSORS]{
+int *d_max = new int[QUANTITY_SENSORS]{
         0,
-        83,
+        50,
         0,
         0,
         0,
-        91,
-        91,
-        133,
-        133,
-        24,
+        50,
+        50,
+        200,
+        200,
+        70,
         0,
         0
 
@@ -478,11 +478,11 @@ int main(int argc, char **argv) {
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
 
         trackName = "offset on " + sensorToNameMap[k];
-        cv::createTrackbar(trackName.c_str(), "OffsetWindow", (int *)(sensortOffsets + k),
+        cv::createTrackbar(trackName.c_str(), "OffsetWindow", &d_min[k],
                            100, nullptr, nullptr);
 
         trackName = "gain on " + sensorToNameMap[k];
-        cv::createTrackbar(trackName.c_str(), "GainWindow", (int *)(sensortGains + k),
+        cv::createTrackbar(trackName.c_str(), "GainWindow", &d_max[k],
                            200, nullptr, nullptr);
 
     }
@@ -661,11 +661,16 @@ bool updateTracking() {
                 pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
 
                 points3d[i].z = f1 * f2 * b / (pointsCam1[i].x * f2 - points[i].x * f1);
-//                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2 + b)) * points3d[i].z / 2;
-                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2)) * points3d[i].z / 2;
+                points3d[i].x = ((pointsCam1[i].x / f1 + (points[i].x / f2)) * points3d[i].z + b) / 2;
                 points3d[i].y = (pointsCam1[i].y / f1 + points[i].y / f2) * points3d[i].z / 2;
+
+//                std::cout << "Y1:  " << (pointsCam1[i].y / f1) * points3d[i].z  << "\tY2: " << (points[i].y / f2) * points3d[i].z << std::endl;
             }
+            imshow("Input#" + std::to_string(cameraNum), frame);
+
         }
+
+
 
         cameraNum++;
     }
@@ -724,11 +729,11 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     //smile
     sensors[1] = fabs(pointsFace[54].x - pointsFace[48].x);
     //left eyebrow
-    sensors[5] = fabs(pointsFace[25].y - pointsFace[27].y);
+    sensors[5] = pointsFace[24].y - pointsFace[42].y;
     //right eyebrow
-    sensors[6] = fabs(pointsFace[18].y - pointsFace[27].y);
+    sensors[6] = pointsFace[19].y - pointsFace[39].y;
     //left eye
-    sensors[7] = fabs(pointsFace[37].y - pointsFace[41].y);
+    sensors[7] = points3d[43].y - points3d[47].y;
     //right eye
     sensors[8] = fabs(pointsFace[37].y - pointsFace[41].y);
     //open mouth
@@ -736,9 +741,9 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 
     for(int k = 0; k < quantityOfUsedSensors; k++){
         int i = usedSensors[k];
-        sensors[i] = 100.0 * fabs(sensors[i] - sensortOffsets[i]/10.0) *  sensortGains[i]/100.0;
+        sensors[i] = 100.0 * (sensors[i] - d_min[i]/10.0) *  1/((d_max[i] - d_min[i])/10.0);
+//        std::cout << i << " s: " << sensors[i] << std:: endl;
     }
-
 
     //trick to improve left eye
     sensors[7] = 100 - sensors[7];
@@ -757,6 +762,8 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     if (sensors[8] < 60)
         sensors[8] = 0;
 
+    std::cout << pointsFace[19].y - pointsFace[39].y << " 7 " << sensors[7] << " 8 " << sensors[8] << std:: endl;
+
 
     // truncates at 100 and 0 all sensors
     for(int k = 0; k < quantityOfUsedSensors; k++){
@@ -766,6 +773,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         if (sensors[i] < 0)
             sensors[i] = 0;
     }
+
 }
 
 void updateFilter(int configuration, void *userData) {
