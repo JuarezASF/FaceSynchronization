@@ -15,24 +15,43 @@ void usage() {
     cerr << "program input img" << endl;
 }
 
-int quantityOfSensorts = 2;
-double *sensors = new double[quantityOfSensorts];
+#define quantityOfSensorts  12
 
-void updateSensors(std::vector<cv::Point3d> pointsFace) {
-    //default behavior for sensors is to follow tracker
+double *sensors = new double[quantityOfSensorts]{0,0,0,0,0,0,0,0,0,0,0,0};
 
-    sensors[1] = 100 * ((pointsFace[61].y - pointsFace[64].y) - 0.2) / (3.5 - 0.2);
+void updateSensors(std::vector<cv::Point_<double> > pointsFace) {
+    //smile
+    sensors[1] = fabs(pointsFace[54].x - pointsFace[48].x);
+    //left eyebrow
+    sensors[5] = fabs(pointsFace[25].y - pointsFace[27].y);
+    //right eyebrow
+    sensors[6] = fabs(pointsFace[18].y - pointsFace[27].y);
+    //left eye
+    sensors[7] = fabs(pointsFace[37].y - pointsFace[41].y);
+    //right eye
+    sensors[8] = fabs(pointsFace[37].y - pointsFace[41].y);
+    //open mouth
+    sensors[9] = fabs(pointsFace[61].y - pointsFace[64].y);
+
+    for (int i = 0; i < quantityOfSensorts ; i++){
+        cout << "\t sensor#" << i << ":" << sensors[i] << endl;
+    }
 
 
 }
 
 vector<string> callibFiles = {
-        "input.png",
-        "img/mouth-opened.jpg",
-        "img/mouth-duck.jpg",
-        "img/mouth-smile.jpg",
-        "img/eyes-opened.jpg",
-        "img/eyes-closed.jpg"
+//        "input.png",
+//        "img/mouth-opened.jpg",
+//        "img/mouth-duck.jpg",
+//        "img/mouth-smile.jpg",
+//        "img/eyes-opened.jpg",
+//        "img/eyes-closed.jpg",
+        "img/nick.jpg"
+//        "img/nickpng-face-left.png",
+//        "img/nick-face-right.png",
+//        "img/nick-eyes.png",
+//        "img/nick-mouth.png"
 };
 
 
@@ -44,7 +63,7 @@ int main(int argc, char **argv) {
     tracker = FACETRACKER::LoadFaceTracker();
     params = FACETRACKER::LoadFaceTrackerParams();
 
-    for(string fileName : callibFiles){
+    for (string fileName : callibFiles) {
         cv::Mat img, gray;
         img = cv::imread(fileName.c_str(), CV_LOAD_IMAGE_COLOR);
 
@@ -66,6 +85,8 @@ int main(int argc, char **argv) {
 
         }
 
+        tracker->Reset();
+
         //update state of tracker with new frame
         int detectionQuality = tracker->NewFrame(gray, params);
 
@@ -76,12 +97,15 @@ int main(int argc, char **argv) {
         //obtain points that were tracked
         auto points = tracker->getShape();
 
+        cout << fileName << endl;
+        updateSensors(points);
+
         int count = 0;
 
         //draw point on input frame
         for (auto p : points) {
-//            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
-            circle(img, p, 8, cv::Scalar(0, 0, 255), 3);
+            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(0, 0, 255));
+            circle(img, p, 3, cv::Scalar(255, 255, 255), 2);
             count++;
         }
 
@@ -89,10 +113,19 @@ int main(int argc, char **argv) {
 
 
     }
-    for(int i = 0; i < callibFiles.size(); i++){
+    int k = 0;
+    for (int i = 0; i < callibFiles.size(); i++) {
         string windowName = callibFiles[i];
         cv::namedWindow(windowName.c_str(), CV_WINDOW_KEEPRATIO);
+        cv::moveWindow(windowName.c_str(), (k%3) * 240, (k / 3)*240 );
         cv::imshow(windowName.c_str(), imgs[i]);
+        k++;
+
+
+        const basic_string<char, char_traits<char>, allocator<char>> &filename = windowName + "marked.png";
+
+        cout << "writing image to:" << filename << endl;
+        cv::imwrite(filename, imgs[i]);
 
     }
 

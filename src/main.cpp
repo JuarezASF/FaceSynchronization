@@ -474,7 +474,7 @@ int main(int argc, char **argv) {
         filters[k] = WindowFilter(sizeOfFilter[filterUsedForSensor[k]], filterConfigurations[filterUsedForSensor[k]]);
         std::string trackName = "sensor on " + sensorToNameMap[k];
 
-        cv::createTrackbar(trackName.c_str(), "FilterControl", &filterUsedForSensor[k],
+        cv::createTrackbar(trackName.c_str(), "FilterControl", &(filterUsedForSensor[k]),
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
 
         trackName = "offset on " + sensorToNameMap[k];
@@ -727,7 +727,7 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         sensors[i] = sliders[i];
 
     //smile
-    sensors[1] = pointsFace[54].x - pointsFace[48].x;
+    sensors[1] = fabs(pointsFace[54].x - pointsFace[48].x);
     //left eyebrow
     sensors[5] = pointsFace[24].y - pointsFace[42].y;
     //right eyebrow
@@ -735,9 +735,9 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     //left eye
     sensors[7] = points3d[43].y - points3d[47].y;
     //right eye
-    sensors[8] = pointsFace[37].y - pointsFace[41].y;
+    sensors[8] = fabs(pointsFace[37].y - pointsFace[41].y);
     //open mouth
-    sensors[9] = pointsFace[61].y - pointsFace[64].y;
+    sensors[9] = fabs(pointsFace[61].y - pointsFace[64].y);
 
     for(int k = 0; k < quantityOfUsedSensors; k++){
         int i = usedSensors[k];
@@ -766,7 +766,8 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 
 
     // truncates at 100 and 0 all sensors
-    for (int i = 0; i < QUANTITY_SENSORS; i++) {
+    for(int k = 0; k < quantityOfUsedSensors; k++){
+        int i = usedSensors[k];
         if (sensors[i] > alpha_slider_max)
             sensors[i] = alpha_slider_max;
         if (sensors[i] < 0)
