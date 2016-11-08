@@ -41,12 +41,17 @@ void updateSensors(std::vector<cv::Point_<double> > pointsFace) {
 }
 
 vector<string> callibFiles = {
-        "input.png",
-        "img/mouth-opened.jpg",
-        "img/mouth-duck.jpg",
-        "img/mouth-smile.jpg",
-        "img/eyes-opened.jpg",
-        "img/eyes-closed.jpg"
+//        "input.png",
+//        "img/mouth-opened.jpg",
+//        "img/mouth-duck.jpg",
+//        "img/mouth-smile.jpg",
+//        "img/eyes-opened.jpg",
+//        "img/eyes-closed.jpg",
+        "img/nick.jpg"
+//        "img/nickpng-face-left.png",
+//        "img/nick-face-right.png",
+//        "img/nick-eyes.png",
+//        "img/nick-mouth.png"
 };
 
 
@@ -80,6 +85,8 @@ int main(int argc, char **argv) {
 
         }
 
+        tracker->Reset();
+
         //update state of tracker with new frame
         int detectionQuality = tracker->NewFrame(gray, params);
 
@@ -97,8 +104,8 @@ int main(int argc, char **argv) {
 
         //draw point on input frame
         for (auto p : points) {
-//            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
-            circle(img, p, 8, cv::Scalar(0, 0, 255), 3);
+            putText(img, std::__cxx11::to_string(count), p, 1, 1, cv::Scalar(0, 0, 255));
+            circle(img, p, 3, cv::Scalar(255, 255, 255), 2);
             count++;
         }
 
@@ -113,6 +120,12 @@ int main(int argc, char **argv) {
         cv::moveWindow(windowName.c_str(), (k%3) * 240, (k / 3)*240 );
         cv::imshow(windowName.c_str(), imgs[i]);
         k++;
+
+
+        const basic_string<char, char_traits<char>, allocator<char>> &filename = windowName + "marked.png";
+
+        cout << "writing image to:" << filename << endl;
+        cv::imwrite(filename, imgs[i]);
 
     }
 

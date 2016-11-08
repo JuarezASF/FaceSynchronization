@@ -95,7 +95,7 @@ double *sensors = new double[QUANTITY_SENSORS];
 bool useFilter = true;
 WindowFilter *filters;
 
-int alpha_slider_max = 150;
+int alpha_slider_max = 100;
 
 void update();
 
@@ -474,15 +474,15 @@ int main(int argc, char **argv) {
         filters[k] = WindowFilter(sizeOfFilter[filterUsedForSensor[k]], filterConfigurations[filterUsedForSensor[k]]);
         std::string trackName = "sensor on " + sensorToNameMap[k];
 
-        cv::createTrackbar(trackName.c_str(), "FilterControl", &filterUsedForSensor[k],
+        cv::createTrackbar(trackName.c_str(), "FilterControl", &(filterUsedForSensor[k]),
                            quantityOfFilterConfigurations - 1, updateFilter, indices + k);
 
         trackName = "offset on " + sensorToNameMap[k];
-        cv::createTrackbar(trackName.c_str(), "OffsetWindow", &sensortOffsets[k],
+        cv::createTrackbar(trackName.c_str(), "OffsetWindow", (int *)(sensortOffsets + k),
                            100, nullptr, nullptr);
 
         trackName = "gain on " + sensorToNameMap[k];
-        cv::createTrackbar(trackName.c_str(), "GainWindow", &sensortGains[k],
+        cv::createTrackbar(trackName.c_str(), "GainWindow", (int *)(sensortGains + k),
                            200, nullptr, nullptr);
 
     }
@@ -661,7 +661,8 @@ bool updateTracking() {
                 pointsCam1[i].y = cap.get(CV_CAP_PROP_FRAME_HEIGHT) - pointsCam1[i].y;
 
                 points3d[i].z = f1 * f2 * b / (pointsCam1[i].x * f2 - points[i].x * f1);
-                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2 + b)) * points3d[i].z / 2;
+//                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2 + b)) * points3d[i].z / 2;
+                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2)) * points3d[i].z / 2;
                 points3d[i].y = (pointsCam1[i].y / f1 + points[i].y / f2) * points3d[i].z / 2;
             }
         }
@@ -721,21 +722,21 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
         sensors[i] = sliders[i];
 
     //smile
-    sensors[1] = pointsFace[54].x - pointsFace[48].x;
+    sensors[1] = fabs(pointsFace[54].x - pointsFace[48].x);
     //left eyebrow
-    sensors[5] = pointsFace[25].y - pointsFace[27].y;
+    sensors[5] = fabs(pointsFace[25].y - pointsFace[27].y);
     //right eyebrow
-    sensors[6] = pointsFace[18].y - pointsFace[27].y;
+    sensors[6] = fabs(pointsFace[18].y - pointsFace[27].y);
     //left eye
-    sensors[7] = points3d[37].y - points3d[41].y;
+    sensors[7] = fabs(pointsFace[37].y - pointsFace[41].y);
     //right eye
-    sensors[8] = pointsFace[37].y - pointsFace[41].y;
+    sensors[8] = fabs(pointsFace[37].y - pointsFace[41].y);
     //open mouth
-    sensors[9] = pointsFace[61].y - pointsFace[64].y;
+    sensors[9] = fabs(pointsFace[61].y - pointsFace[64].y);
 
     for(int k = 0; k < quantityOfUsedSensors; k++){
         int i = usedSensors[k];
-        sensors[i] = 100.0 * (sensors[i] - sensortOffsets[i]/100.0) *  sensortGains[i]/200.0;
+        sensors[i] = 100.0 * fabs(sensors[i] - sensortOffsets[i]/10.0) *  sensortGains[i]/100.0;
     }
 
 
