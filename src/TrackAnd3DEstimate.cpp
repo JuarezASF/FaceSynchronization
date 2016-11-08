@@ -12,8 +12,11 @@
 
 using namespace std;
 
-std::vector<cv::Point3d> updateTracking(cv::Mat &A, cv::Mat &B);
-void logMeasurements(vector<cv::Point3d> pointsFace);
+typedef std::tuple<vector<cv::Point3d>, vector<cv::Point2d>, vector<cv::Point2d>> ReturnedPoints;
+
+ReturnedPoints updateTracking(cv::Mat &A, cv::Mat &B);
+
+void logMeasurements(ReturnedPoints pointsFace);
 
 //frame is used for web cam input; but the CSIRO face detection works only on gray scale images
 
@@ -22,9 +25,24 @@ double f1 = (854.792781659906610 + 857.614193372593600) / 2;
 double f2 = (834.378121568220080 + 835.838850269775660) / 2;
 double b = 18;
 
+//std::vector<std::string> files = {
+//        "img/eyes-closed.jpg",
+//        "img/eyes-closed.jpg",
+//};
+
 std::vector<std::string> files = {
-        "img/eyes-closed.jpg",
-        "img/eyes-closed.jpg",
+        "img/varyingDistanceExpStart30step5end60/image01.png",
+        "img/varyingDistanceExpStart30step5end60/image02.png",
+        "img/varyingDistanceExpStart30step5end60/image03.png",
+        "img/varyingDistanceExpStart30step5end60/image04.png",
+        "img/varyingDistanceExpStart30step5end60/image05.png",
+        "img/varyingDistanceExpStart30step5end60/image06.png",
+        "img/varyingDistanceExpStart30step5end60/image07.png",
+        "img/varyingDistanceExpStart30step5end60/image08.png",
+        "img/varyingDistanceExpStart30step5end60/image09.png",
+        "img/varyingDistanceExpStart30step5end60/image10.png",
+        "img/varyingDistanceExpStart30step5end60/image11.png",
+        "img/varyingDistanceExpStart30step5end60/image12.png",
 };
 
 int main(int argc, char **argv) {
@@ -44,7 +62,10 @@ int main(int argc, char **argv) {
 
         std::string fA = files[i];
         std::string fB = files[i + 1];
-        i++;
+        i += 2;
+
+        cout << fA << endl;
+        cout << fB << endl;
 
         A = cv::imread(fA.c_str());
         B = cv::imread(fB.c_str());
@@ -61,6 +82,7 @@ int main(int argc, char **argv) {
         auto v3d = updateTracking(A, B);
 
         logMeasurements(v3d);
+        cv::waitKey(10);
 
 
     }
@@ -102,11 +124,11 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame) {
     }
 
     const std::string &winname = "Input#" + std::to_string(cameraNum);
-    cvNamedWindow(winname.c_str(), CV_WINDOW_KEEPRATIO);
+    cvNamedWindow(winname.c_str(), CV_WINDOW_FREERATIO);
 
-    int w = 250;
+    int w = 100;
     cv::resizeWindow(winname, w, w);
-    cv::moveWindow(winname.c_str(), w * (cameraNum % 2), w * (cameraNum / 2));
+    cv::moveWindow(winname.c_str(), w * (cameraNum % 6), w * (cameraNum / 6));
     imshow(winname, frame);
 
     cameraNum++;
@@ -116,17 +138,23 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame) {
 
 }
 
-std::vector<cv::Point3d> updateTracking(cv::Mat &frameA, cv::Mat &frameB) {
+
+ReturnedPoints updateTracking(cv::Mat &frameA, cv::Mat &frameB) {
     int detectionQuality;
     int cameraNum = 1;
 
     std::vector<cv::Point3d> points3d(66);
+    std::vector<cv::Point2d> points2dLeft;
+    std::vector<cv::Point2d> points2dRight;
 
-    std::vector<cv::Point_<double> > pointA = track(frameA);
-    std::vector<cv::Point_<double> > pointB = track(frameB);
+    std::vector<cv::Point2d> pointA = track(frameA);
+    std::vector<cv::Point2d> pointB = track(frameB);
 
-    if (pointA.size() != pointB.size())
+    if (pointA.size() != pointB.size()) {
         std::cerr << " points have differnt size!" << std::endl;
+        std::cerr << " left has " << pointA.size() << " and right has:" << pointB.size() << endl;
+
+    }
 
     int quantitOfPoints = (int) pointA.size();
 
@@ -137,41 +165,44 @@ std::vector<cv::Point3d> updateTracking(cv::Mat &frameA, cv::Mat &frameB) {
         pointA[i].y = hA - pointA[i].y;
         pointB[i].y = hB - pointB[i].y;
 
+        points2dLeft.emplace_back(pointA[i].x, pointA[i].y);
+        points2dRight.emplace_back(pointB[i].x, pointB[i].y);
+
         points3d[i].z = f1 * f2 * b / (pointA[i].x * f2 - pointB[i].x * f1);
-//                points3d[i].x = (pointsCam1[i].x / f1 + (points[i].x / f2 + b)) * points3d[i].z / 2;
-        points3d[i].x = ((pointA[i].x / f1 + (pointB[i].x / f2)) * points3d[i].z + b)/ 2;
-        points3d[i].y = (pointA[i].y / f1 + pointB[i].y / f2) * points3d[i].z / 2;
+        points3d[i].x = ((pointA[i].x / f1 + (pointB[i].x / f2)) * points3d[i].z + b) / 2.0;
+        points3d[i].y = (pointA[i].y / f1 + pointB[i].y / f2) * points3d[i].z / 2.0;
     }
 
 
-    return points3d;
+    return make_tuple(points3d, points2dLeft, points2dRight);
 }
 
+int c = 0;
 
-void logMeasurements(vector<cv::Point3d> pointsFace) {
-    vector<double> x;
+void logMeasurements(ReturnedPoints data) {
+
+    auto pointsFace = std::get<0>(data);
+    auto leftRawPoint = std::get<1>(data);
+    auto rightRawPoint = std::get<2>(data);
+    vector<double> corrected3d;
+    vector<double> rawLeft;
+    vector<double> rawRight;
     //smile
-    x.push_back(fabs(pointsFace[54].x - pointsFace[48].x));
-    //left eyebrow
-    x.push_back(fabs(pointsFace[25].y - pointsFace[27].y));
-    //right eyebrow
-    x.push_back(fabs(pointsFace[18].y - pointsFace[27].y));
-    //left eye
-    x.push_back(fabs(pointsFace[37].y - pointsFace[41].y));
-    //right eye
-    x.push_back(fabs(pointsFace[37].y - pointsFace[41].y));
-    //open mouth
-    x.push_back(fabs(pointsFace[61].y - pointsFace[64].y));
+    corrected3d.push_back(fabs(pointsFace[54].x - pointsFace[48].x));
+    rawLeft.push_back(fabs(leftRawPoint[54].x - leftRawPoint[48].x));
+    rawRight.push_back(fabs(rightRawPoint[54].x - rightRawPoint[48].x));
 
     vector<string> names = {
-            "smile", "left eyebrow", "right eyebrow",
-            "left eye", "right eye", "open mouth"
+            "smile"
     };
 
     cout << "======================" << endl;
+    std::cout << "====" << c << "====" << std::endl;
     cout << "======================" << endl;
-    for( int i = 0 ; i < x.size(); i++){
-        cout << names[i] << "\t" << x[i] << endl;
+    std::cout << "corrected | raw left | raw right" << endl;
+    c++;
+    for (int i = 0; i < corrected3d.size(); i++) {
+        cout << names[i] << "\t" << corrected3d[i] << "\t" << rawLeft[i] << "\t" << rawRight[i] << endl;
     }
     cout << "======================" << endl;
     cout << "======================" << endl;
