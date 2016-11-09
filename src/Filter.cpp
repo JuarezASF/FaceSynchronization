@@ -22,7 +22,7 @@ void HanningFilter::updateP(float a, float b, float c, float d) {
     v[3] = d;
 }
 
-float HanningFilter::updateValue(float sample) {
+double HanningFilter::updateValue(float sample) {
     x[0] = x[1];
     x[1] = x[2];
     x[2] = sample;
@@ -38,7 +38,7 @@ WindowFilter::WindowFilter(int sizeOfFilter, double *coefficients) {
     construct(sizeOfFilter, coefficients);
 }
 
-float WindowFilter::updateValue(float sample) {
+double WindowFilter::updateValue(float sample) {
     for (int i = 0; i < sizeOfFilter - 1; i++)
         x[i] = x[i + 1];
 

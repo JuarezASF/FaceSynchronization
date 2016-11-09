@@ -10,7 +10,7 @@ class Filter {
 
 public:
 
-    virtual float updateValue(float sample) = 0;
+    virtual double updateValue(float sample) = 0;
 
 };
 
@@ -31,7 +31,7 @@ public:
 
     void updateP(float a, float b, float c, float d);
 
-    float updateValue(float sample) override;
+    double updateValue(float sample) override;
 
 
 };
@@ -48,7 +48,7 @@ public:
 
     virtual ~WindowFilter();
 
-    float updateValue(float sample) override;
+    double updateValue(float sample) override;
 
     void construct(int sizeOfFilter, double *coefficients);
 
