@@ -41,13 +41,13 @@ void updateSensors(std::vector<cv::Point_<double> > pointsFace) {
 }
 
 vector<string> callibFiles = {
-//        "input.png",
-//        "img/mouth-opened.jpg",
-//        "img/mouth-duck.jpg",
-//        "img/mouth-smile.jpg",
-//        "img/eyes-opened.jpg",
-//        "img/eyes-closed.jpg",
-        "img/nick.jpg"
+        "input.png",
+        "img/mouth-opened.jpg",
+        "img/mouth-duck.jpg",
+        "img/mouth-smile.jpg",
+        "img/eyes-opened.jpg",
+        "img/eyes-closed.jpg",
+//        "img/nick.jpg"
 //        "img/nickpng-face-left.png",
 //        "img/nick-face-right.png",
 //        "img/nick-eyes.png",
