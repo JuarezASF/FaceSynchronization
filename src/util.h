@@ -311,7 +311,7 @@ std::vector<std::pair<std::string, std::string>> getFilesOnDir(std::string path)
     std::map<std::string, int> allFiles;
 
     BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod)) {
-        if (fs::is_regular_file(p)) {
+        if (fs::is_regular_file(p) && (fs::extension(p).compare(".png") == 0)) {
             // do something with p
             allFiles.insert(std::make_pair(p.c_str(), 0));
         }

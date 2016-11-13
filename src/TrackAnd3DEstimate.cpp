@@ -60,7 +60,7 @@ void runOnDirectory(std::string dirName) {
     if (!startCapture()) {
         return;
     };
-    
+
     std::vector<std::pair<std::string, std::string>> imagePair =
             getFilesOnDir(dirName);
 
