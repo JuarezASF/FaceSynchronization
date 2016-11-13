@@ -8,6 +8,8 @@
 #include <tracker/FaceTracker.hpp>
 #include <opencv2/highgui.hpp>
 #include "global.h"
+#include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
 
 bool startFaceTracker() {
     bool success = true;
@@ -28,15 +30,18 @@ bool startFaceTracker() {
     return success;
 }
 
-bool startCapture(){
-//    capture.at(0).open("video/out_mouth1_2.avi");
-//    capture.at(1).open("video/out_mouth2_2.avi");
+bool startCapture() {
+    capture.at(0).open("video/out_mouth1_2.avi");
+    capture.at(1).open("video/out_mouth2_2.avi");
 
 //    capture.at(0).open("video/out_eyebrow1_1.avi");
 //    capture.at(1).open("video/out_eyebrow2_1.avi");
 
-    capture.at(0).open("video/out_happy1_1.avi");
-    capture.at(1).open("video/out_happy2_1.avi");
+//    capture.at(0).open("video/out_happy1_1.avi");
+//    capture.at(1).open("video/out_happy2_1.avi");
+//
+//    capture.at(0).open("video/out_eyes1_1.avi");
+//    capture.at(1).open("video/out_eyes2_1.avi");
 
     if (!capture.at(0).isOpened() || !capture.at(1).isOpened()) {
         std::cerr << "cannot open camera!" << std::endl;
@@ -46,7 +51,7 @@ bool startCapture(){
     return true;
 }
 
-void setFilterConfigurations(double **coefficients, int *sizeOfFilter, std::vector<std::string> &filterDescription){
+void setFilterConfigurations(double **coefficients, int *sizeOfFilter, std::vector<std::string> &filterDescription) {
     coefficients[0] = new double[1]{1.0};
     sizeOfFilter[0] = 1;
     filterDescription.push_back("no filter at all");
@@ -289,6 +294,42 @@ void setFilterConfigurations(double **coefficients, int *sizeOfFilter, std::vect
             -0.001873729287127};
     sizeOfFilter[12] = 17;
     filterDescription.push_back("low pass, wc = 0.9pi");
+
+}
+
+#include <string>
+#include <tuple>
+#include <vector>
+
+namespace fs = boost::filesystem;
+
+std::vector<std::pair<std::string, std::string>> getFilesOnDir(std::string path) {
+    fs::path targetDir(path.c_str());
+
+    fs::directory_iterator it(targetDir), eod;
+
+    std::map<std::string, int> allFiles;
+
+    BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod)) {
+        if (fs::is_regular_file(p)) {
+            // do something with p
+            allFiles.insert(std::make_pair(p.c_str(), 0));
+        }
+    }
+
+    std::vector<std::string> listOfFiles;
+
+    for(auto it : allFiles){
+        listOfFiles.push_back(it.first);
+    }
+
+    std::vector<std::pair<std::string, std::string>> output;
+
+    for (int i = 0; i + 1 < listOfFiles.size(); i += 2) {
+        output.push_back(std::make_pair(listOfFiles[i], listOfFiles[i+1]));
+    }
+
+    return output;
 
 }
 

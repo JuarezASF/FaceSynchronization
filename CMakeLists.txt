@@ -13,6 +13,20 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-module
 include(CreateLaunchers)
 include(MSVCMultipleProcessCompile) # /MP
 
+#set(BOOST_LIBRARYDIR /usr/include/boost)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+
+find_package(Boost REQUIRED COMPONENTS system filesystem regex )
+message(status "** Boost Include: ${Boost_INCLUDE_DIR}")
+message(status "** Boost Libraries: ${Boost_LIBRARY_DIRS}")
+message(status "** Boost Libraries: ${Boost_LIBRARIES}")
+
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+
+
 #OpenCV on Rodrigo's computer
 #include_directories(/home/rodrigo/opencv-2.4_location/include)
 #set(OPENCV24_LIB /home/rodrigo/opencv-2.4_location/lib)
@@ -147,4 +161,7 @@ target_link_libraries(TrackAnd3DEstimate
         ${FACE_ANALYSIS_LIB}/libutilities.so
         ${FACE_ANALYSIS_LIB}/libclmTracker.so
         ${FACE_ANALYSIS_LIB}/libavatarAnim.so
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_REGEX_LIBRARY}
+        ${Boost_FILESYSTEM_LIBRARY}
         )
