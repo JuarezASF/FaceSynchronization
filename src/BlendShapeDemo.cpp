@@ -13,34 +13,42 @@
 #include "display.h"
 
 
-#define HIGHRES 0
+#define HIGHRES 1
 
 #if HIGHRES > 0
-int QUANTITY_POSES = 8;
+int QUANTITY_POSES = 10;
+int quantityOfPoses = 10;
+
 std::vector<std::string> keyPoseFiles = {
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
-        "obj/Rosto_HD.OBJ",
+        "obj/HD/rosto_normal.OBJ",
+        "obj/HD/rosto_feliz.OBJ",
+        "obj/HD/rosto_bravo.OBJ",
+        "obj/HD/HD_eye_L.OBJ",
+        "obj/HD/HD_eye_R.OBJ",
+        "obj/HD/HD_eye_L+.OBJ",
+        "obj/HD/HD_eye_R+.OBJ",
+        "obj/HD/HD_rosto_aberto.OBJ",
+        "obj/HD/HD_rosto_duck.OBJ",
+        "obj/HD/HD_rosto_surpreso.OBJ",
 };
 
 std::vector<std::string> keyPoseNames = {
         "neutro",
-        "neutro2",
-        "neutro3",
-        "neutro4",
-        "neutro5",
-        "neutro6",
-        "neutro7",
-        "neutro8",
+        "feliz",
+        "bravo",
+        "eyeL",
+        "eyeR",
+        "eyeL+",
+        "eyeR+",
+        "aberto",
+        "duck",
+        "surpreso",
 };
 
 #else
 int quantityOfPoses = 12;
+
+
 std::vector<std::string> keyPoseFiles = {
         "obj/rosto_neutro.obj",
         "obj/rosto_feliz.obj",

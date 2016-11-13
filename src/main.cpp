@@ -173,8 +173,8 @@ Fir1 **filterForTrackedSensor;
  * sensor index -> index of filter to use as default
  */
 std::map<int, int> sensorToDefaultFilterConfig = {
-        {7, 3},
-        {8, 3}
+        {7, 0},
+        {8, 0}
 };
 
 
@@ -208,8 +208,8 @@ int *d_min = new int[QUANTITY_SENSORS]{
         0,
         24,
         24,
-        2,
-        2,
+        3,
+        3,
         3,
         0,
         0
@@ -227,8 +227,8 @@ int *d_max = new int[QUANTITY_SENSORS]{
         0,
         37,
         36,
-        200,
-        200,
+        6,
+        6,
         43,
         0,
         0
@@ -428,6 +428,7 @@ int main(int argc, char **argv) {
 
     std::ofstream f;
     f.open(dataFileName);
+    f << std::setprecision(5);
 
     unsigned long quantityOfSamples = filterOutput[0].size();
     for (int i = 0; i < quantityOfSamples; i++) {
@@ -579,8 +580,11 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
 //        std::cout << i << " s: " << sensors[i] << std:: endl;
     }
 
-    //trick to improve left eye
+    // invert measurementes for eye
     sensors[7] = 100 - sensors[7];
+    sensors[8] = 100 - sensors[8];
+
+    //trick to improve left eye
     if (sensors[7] > 80)
         sensors[7] = 100;
     if (sensors[7] > 70)
@@ -588,7 +592,6 @@ void updateSensors(std::vector<cv::Point3d> pointsFace) {
     if (sensors[7] < 60)
         sensors[7] = 0;
     //trick to improve right eye
-    sensors[8] = 100 - sensors[8];
     if (sensors[8] > 80)
         sensors[8] = 100;
     if (sensors[8] > 70)

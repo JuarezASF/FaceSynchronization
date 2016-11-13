@@ -242,6 +242,7 @@ bool LoadObjAndConvert(float bmin[3], float bmax[3], std::vector<DrawObject> *dr
         return false;
     }
 
+    printf("filename: %s\n", filename);
     printf("Parsing time: %d [ms]\n", (int) tm.msec());
 
     printf("# of vertices  = %d\n", (int) (attrib.vertices.size()) / 3);
