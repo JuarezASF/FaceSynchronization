@@ -36,7 +36,8 @@ int main(int argc, char **argv) {
 
     std::string baseName = "exp/exp13112016/exp";
     int quantityOfExp =  10;
-    int distances[] = {35,40,45,50,55,60,65,70,75,80};
+//    int distances[] = {35,40,45,50,55,60,65,70,75,80};
+    int distances[] = {40};
 
     for(int i = 0; i < quantityOfExp; i++){
 
@@ -44,6 +45,8 @@ int main(int argc, char **argv) {
         runOnDirectory(name);
         string nameB = baseName + to_string(distances[i]) + "cmSorrindo";
         runOnDirectory(nameB);
+
+        cv::waitKey(0);
 
     }
 
@@ -137,12 +140,13 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame) {
         cv::circle(frame, p, 3, cv::Scalar(0, 0, 255), 1);
     }
 
-//    const std::string &winname = "Input#" + std::to_string(cameraNum);
-//    cvNamedWindow(winname.c_str(), CV_WINDOW_FREERATIO);
-//    int w = 100;
-//    cv::resizeWindow(winname, w, w);
-//    cv::moveWindow(winname.c_str(), w * (cameraNum % 6), w * (cameraNum / 6));
-//    imshow(winname, frame);
+    const std::string &winname = "Input#" + std::to_string(cameraNum);
+    cvNamedWindow(winname.c_str(), CV_WINDOW_FREERATIO);
+    int w = 100;
+    cv::resizeWindow(winname, w, w);
+    cv::moveWindow(winname.c_str(), w * (cameraNum % 10), w * (cameraNum / 10));
+    imshow(winname, frame);
+    cv::waitKey(0);
 
     cameraNum++;
 

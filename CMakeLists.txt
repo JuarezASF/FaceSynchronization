@@ -165,3 +165,31 @@ target_link_libraries(TrackAnd3DEstimate
         ${Boost_REGEX_LIBRARY}
         ${Boost_FILESYSTEM_LIBRARY}
         )
+
+set(SOURCE_FILES4
+        src/RecordVideo.cpp
+        src/trackball.cc
+        src/display.h
+        src/display.cpp
+        src/global.h
+        src/global.cpp
+        src/DrawObject.cpp
+        src/DrawObject.h
+        src/structs.h
+        src/Filter.cpp
+        src/Filter.h
+        src/util.h)
+add_executable(RecordVideo ${SOURCE_FILES4})
+target_link_libraries(RecordVideo
+        ${ALL_LIBS}
+        ${OPENCV24_LIB}/libopencv_highgui.so
+        ${OPENCV24_LIB}/libopencv_imgproc.so
+        ${OPENCV24_LIB}/libopencv_objdetect.so
+        ${OPENCV24_LIB}/libopencv_core.so
+        ${FACE_ANALYSIS_LIB}/libutilities.so
+        ${FACE_ANALYSIS_LIB}/libclmTracker.so
+        ${FACE_ANALYSIS_LIB}/libavatarAnim.so
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_REGEX_LIBRARY}
+        ${Boost_FILESYSTEM_LIBRARY}
+        )

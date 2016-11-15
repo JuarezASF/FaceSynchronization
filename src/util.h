@@ -30,6 +30,24 @@ bool startFaceTracker() {
     return success;
 }
 
+void startFaceTracker(FACETRACKER::FaceTracker **trackerToStart, FACETRACKER::FaceTrackerParams **params) {
+    *trackerToStart = FACETRACKER::LoadFaceTracker();
+    *params = FACETRACKER::LoadFaceTrackerParams();
+
+    if (*trackerToStart == nullptr) {
+        std::cerr << "Cannot load tracker!" << std::endl;
+        return;
+    }
+
+    if (*params == nullptr) {
+        std::cerr << "Cannot load tracker params!" << std::endl;
+        return;
+
+    }
+
+    return;
+}
+
 bool startCapture() {
     capture.at(0).open("video/out_mouth1_2.avi");
     capture.at(1).open("video/out_mouth2_2.avi");
@@ -311,22 +329,22 @@ std::vector<std::pair<std::string, std::string>> getFilesOnDir(std::string path)
     std::map<std::string, int> allFiles;
 
     BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod)) {
-        if (fs::is_regular_file(p) && (fs::extension(p).compare(".png") == 0)) {
-            // do something with p
-            allFiles.insert(std::make_pair(p.c_str(), 0));
-        }
-    }
+                    if (fs::is_regular_file(p) && (fs::extension(p).compare(".png") == 0)) {
+                        // do something with p
+                        allFiles.insert(std::make_pair(p.c_str(), 0));
+                    }
+                }
 
     std::vector<std::string> listOfFiles;
 
-    for(auto it : allFiles){
+    for (auto it : allFiles) {
         listOfFiles.push_back(it.first);
     }
 
     std::vector<std::pair<std::string, std::string>> output;
 
     for (int i = 0; i + 1 < listOfFiles.size(); i += 2) {
-        output.push_back(std::make_pair(listOfFiles[i], listOfFiles[i+1]));
+        output.push_back(std::make_pair(listOfFiles[i], listOfFiles[i + 1]));
     }
 
     return output;
