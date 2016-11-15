@@ -17,8 +17,10 @@
 using namespace cv;
 using namespace std;
 
-std::vector<cv::Point_<double> > track(cv::Mat &frame, string windowName, FACETRACKER::FaceTracker *tracker,
-FACETRACKER::FaceTrackerParams *params);
+bool track(cv::Mat &frame, string windowName, FACETRACKER::FaceTracker *tracker,
+           FACETRACKER::FaceTrackerParams *params);
+
+bool readAndExecuteOnce();
 
 //frame is used for web cam input; but the CSIRO face detection works only on gray scale images
 
@@ -31,29 +33,30 @@ namespace fs = boost::filesystem;
 
 std::fstream f;
 
+VideoCapture cap1, cap2;
+
+FACETRACKER::FaceTracker **trackerA, **trackerB;
+FACETRACKER::FaceTrackerParams **paramsA, **paramsB;
+
+Mat frame1, frame2;
+
+string imageNameA, imageNameB;
 
 int main(int argc, char **argv) {
+    trackerA = new FACETRACKER::FaceTracker *;
+    trackerB = new FACETRACKER::FaceTracker *;
 
-    VideoCapture cap1, cap2;
-
-    FACETRACKER::FaceTracker **trackerA, **trackerB;
-    FACETRACKER::FaceTrackerParams **paramsA, **paramsB;
-
-    trackerA = new FACETRACKER::FaceTracker*;
-    trackerB = new FACETRACKER::FaceTracker*;
-
-    paramsA = new FACETRACKER::FaceTrackerParams*;
-    paramsB = new FACETRACKER::FaceTrackerParams*;
-
+    paramsA = new FACETRACKER::FaceTrackerParams *;
+    paramsB = new FACETRACKER::FaceTrackerParams *;
 
     startFaceTracker(trackerA, paramsA);
-    if(*trackerA == nullptr || *paramsA == nullptr){
+    if (*trackerA == nullptr || *paramsA == nullptr) {
         cerr << "cannot start tracker A" << endl;
         return 0;
     }
 
     startFaceTracker(trackerB, paramsB);
-    if(*trackerB == nullptr || *paramsB == nullptr){
+    if (*trackerB == nullptr || *paramsB == nullptr) {
         cerr << "cannot start tracker B" << endl;
         return 0;
     }
@@ -62,9 +65,6 @@ int main(int argc, char **argv) {
     cap1.open(1);
     cap2.open(2);
 
-    Mat frame1, frame2;
-
-    string imageNameA, imageNameB;
     int imageNumber = 1;
 
     cv::namedWindow("InputA", CV_WINDOW_FREERATIO);
@@ -86,6 +86,11 @@ int main(int argc, char **argv) {
     cv::resizeWindow("TrackedA", width, width);
     cv::resizeWindow("TrackedB", width, width);
 
+    int mode = 0;
+
+    int toCapture = 40;
+    int captured = 0;
+
 
     while (true) {
         cap1 >> frame1;
@@ -94,33 +99,50 @@ int main(int argc, char **argv) {
         imshow("InputA", frame1);
         imshow("InputB", frame2);
 
-        track(frame1, "TrackedA", *trackerA, *paramsA);
-        track(frame2, "TrackedB", *trackerB, *paramsB);
-
-
         char q = (char) (0xFF & waitKey(30));
-        if (q == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
-        {
-            cout << "esc key is pressed by user" << endl;
+        if (mode == 0) {
+            if (q == 27) {
+                cout << "esc key is pressed by user" << endl;
+                break;
+            }
+
+            if (q == 's') {
+                mode = 1;
+            }
+
+        }
+        else if (mode == 1) {
+
+            if(captured < toCapture) {
+                if (readAndExecuteOnce()) {
+                    //write frames to file
+                    char nameABuffer[100];
+                    char nameBBuffer[100];
+
+                    sprintf(nameABuffer, "output/image%02dL.png", captured);
+                    imwrite(nameABuffer, frame1);
+
+                    sprintf(nameBBuffer, "output/image%02dR.png", captured);
+                    imwrite(nameBBuffer, frame2);
+
+                    printf("image# %02d captured. Saved to %s and %s\n", captured, nameABuffer,
+                           nameBBuffer);
+
+                    captured++;
+                } else {
+
+                }
+
+            }
+            else{
+                mode = 2;
+            }
+        }
+        else {
+            cout << "All frames were captured!" << endl;
             break;
         }
 
-        if (q == 'p') //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
-        {
-            imageNameA = "output/image" + to_string(imageNumber) + "L.png";
-            imwrite(imageNameA, frame1);
-
-            imageNameB = "output/image" + to_string(imageNumber) + "R.png";
-            imwrite(imageNameB, frame2);
-
-            printf("image# %02d captured. Saved to %s and %s\n", imageNumber, imageNameA.c_str(), imageNameB.c_str());
-        }
-
-        if (q == 'c') //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
-        {
-            imageNumber += 1;
-            cout << "next" << endl;
-        }
 
     }
 
@@ -129,17 +151,27 @@ int main(int argc, char **argv) {
 
 }
 
+bool readAndExecuteOnce() {
+
+    bool sucess = track(frame1, "TrackedA", *trackerA, *paramsA);
+    sucess &= track(frame2, "TrackedB", *trackerB, *paramsB);
+
+    return sucess;
+
+
+}
+
 int cameraNum = 0;
 
 
-std::vector<cv::Point_<double> > track(cv::Mat &frame, string windowName,
-    FACETRACKER::FaceTracker *tracker, FACETRACKER::FaceTrackerParams *params) {
+bool track(cv::Mat &frame, string windowName,
+           FACETRACKER::FaceTracker *tracker, FACETRACKER::FaceTrackerParams *params) {
     std::vector<cv::Point_<double> > points;
     cv::Mat grayScale;
 
     if (frame.empty()) {
         std::cout << "Empty image received!" << std::endl;
-        return points;
+        return false;
     }
 
     cvtColor(frame, grayScale, cv::COLOR_BGR2GRAY);
@@ -153,7 +185,7 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame, string windowName,
 
         if (detectionQuality == 0 || detectionQuality == FACETRACKER::FaceTracker::TRACKER_FAILED) {
             std::cerr << "error while tracking! problematic frame" << windowName << std::endl;
-            return points;
+            return false;
         }
     }
 
@@ -161,18 +193,14 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame, string windowName,
     points = tracker->getShape();
 
     for (auto p : points) {
-//            putText(frame, std::to_string(count), p, 1, 1, cv::Scalar(255, 0, 0));
         cv::circle(grayScale, p, 3, cv::Scalar(0, 0, 255), 1);
     }
 
     imshow(windowName, grayScale);
     cv::waitKey(5);
 
-    cameraNum++;
 
-
-    return points;
-
+    return true;
 }
 
 
