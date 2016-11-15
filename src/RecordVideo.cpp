@@ -43,6 +43,24 @@ Mat frame1, frame2;
 string imageNameA, imageNameB;
 
 int main(int argc, char **argv) {
+
+    char dirName[100];
+    char experimentName[100];
+
+    printf("Enter name of directory to save output:");
+    scanf("%s", experimentName);
+    getchar();
+
+    sprintf(dirName, "output/%s", experimentName);
+
+    boost::filesystem::path dir(dirName);
+    if (boost::filesystem::create_directory(dir)) {
+        std::cout << "Directory Created: " << string(dirName) << std::endl;
+    } else {
+        std::cerr << "Error while creating directory:" << string(dirName) << endl;
+        return 0;
+    }
+
     trackerA = new FACETRACKER::FaceTracker *;
     trackerB = new FACETRACKER::FaceTracker *;
 
@@ -91,6 +109,7 @@ int main(int argc, char **argv) {
     int toCapture = 40;
     int captured = 0;
 
+    int waitTime = 30;
 
     while (true) {
         cap1 >> frame1;
@@ -99,7 +118,7 @@ int main(int argc, char **argv) {
         imshow("InputA", frame1);
         imshow("InputB", frame2);
 
-        char q = (char) (0xFF & waitKey(30));
+        char q = (char) (0xFF & waitKey(waitTime));
         if (mode == 0) {
             if (q == 27) {
                 cout << "esc key is pressed by user" << endl;
@@ -107,22 +126,23 @@ int main(int argc, char **argv) {
             }
 
             if (q == 's') {
+                waitTime = 100;
                 mode = 1;
             }
 
         }
         else if (mode == 1) {
 
-            if(captured < toCapture) {
+            if (captured < toCapture) {
                 if (readAndExecuteOnce()) {
                     //write frames to file
                     char nameABuffer[100];
                     char nameBBuffer[100];
 
-                    sprintf(nameABuffer, "output/image%02dL.png", captured);
+                    sprintf(nameABuffer, "output/%s/image%02dL.png", experimentName, captured);
                     imwrite(nameABuffer, frame1);
 
-                    sprintf(nameBBuffer, "output/image%02dR.png", captured);
+                    sprintf(nameBBuffer, "output/%s/image%02dR.png", experimentName, captured);
                     imwrite(nameBBuffer, frame2);
 
                     printf("image# %02d captured. Saved to %s and %s\n", captured, nameABuffer,
@@ -134,7 +154,8 @@ int main(int argc, char **argv) {
                 }
 
             }
-            else{
+            else {
+                waitTime = 30;
                 mode = 2;
             }
         }
