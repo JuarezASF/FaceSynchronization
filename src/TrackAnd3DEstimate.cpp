@@ -32,29 +32,47 @@ std::fstream f;
 
 void runOnDirectory(std::string dirName);
 
+int cameraNum = 0;
+int windowNum = 0;
+
 int main(int argc, char **argv) {
 
     std::string baseName = "exp/exp13112016/exp";
-    int quantityOfExp =  10;
+//    int quantityOfExp = 10;
 //    int distances[] = {35,40,45,50,55,60,65,70,75,80};
-    int distances[] = {40};
+//    int quantityOfExp = 2;
+//    int distances[] = {40, 75};
+    int quantityOfExp = 1;
+    int distances[] = {45};
 
-    for(int i = 0; i < quantityOfExp; i++){
+    for (int i = 0; i < quantityOfExp; i++) {
+
+        cout << "press to continue ..." << endl;
+        cv::waitKey(0);
+        cv::destroyAllWindows();
+        cv::waitKey(5);
+        cameraNum = 0;
+        windowNum = 0;
 
         string name = baseName + to_string(distances[i]) + "cmNeutro";
         runOnDirectory(name);
+
+        cout << "press to continue ..." << endl;
+        cv::waitKey(0);
+        cv::destroyAllWindows();
+        cv::waitKey(5);
+        cameraNum = 0;
+        windowNum = 0;
+
         string nameB = baseName + to_string(distances[i]) + "cmSorrindo";
         runOnDirectory(nameB);
 
-        cv::waitKey(0);
 
     }
 
 
-
 }
 
-int cameraNum = 0;
 
 void runOnDirectory(std::string dirName) {
     if (!startFaceTracker()) {
@@ -63,6 +81,8 @@ void runOnDirectory(std::string dirName) {
     if (!startCapture()) {
         return;
     };
+
+    tracker->Reset();
 
     std::vector<std::pair<std::string, std::string>> imagePair =
             getFilesOnDir(dirName);
@@ -140,13 +160,17 @@ std::vector<cv::Point_<double> > track(cv::Mat &frame) {
         cv::circle(frame, p, 3, cv::Scalar(0, 0, 255), 1);
     }
 
-    const std::string &winname = "Input#" + std::to_string(cameraNum);
-    cvNamedWindow(winname.c_str(), CV_WINDOW_FREERATIO);
-    int w = 100;
-    cv::resizeWindow(winname, w, w);
-    cv::moveWindow(winname.c_str(), w * (cameraNum % 10), w * (cameraNum / 10));
-    imshow(winname, frame);
-    cv::waitKey(0);
+    if (cameraNum % 8 == 0 || cameraNum % 8 == 1) {
+        int windowIndex = windowNum++;
+        const std::string &winname = "Input#" + std::to_string(windowIndex);
+        cvNamedWindow(winname.c_str(), CV_WINDOW_FREERATIO);
+        int w = 100;
+        cv::resizeWindow(winname, w, w);
+        cv::moveWindow(winname.c_str(), w * ((windowIndex) % 10), w * ((windowIndex) / 10));
+        imshow(winname, frame);
+        cv::waitKey(10);
+
+    }
 
     cameraNum++;
 

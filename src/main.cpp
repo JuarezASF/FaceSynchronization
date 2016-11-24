@@ -165,6 +165,7 @@ std::vector<float> *filterOutput;
  */
 int SENSOR_TO_TRACK = 1;
 
+//hanning
 int DEFAULT_FILTER_CONFIG = 1;
 
 Fir1 **filterForTrackedSensor;
@@ -173,8 +174,8 @@ Fir1 **filterForTrackedSensor;
  * sensor index -> index of filter to use as default
  */
 std::map<int, int> sensorToDefaultFilterConfig = {
-        {7, 0},
-        {8, 0}
+        {7, 1},
+        {8, 1}
 };
 
 
@@ -234,6 +235,8 @@ int *d_max = new int[QUANTITY_SENSORS]{
         0
 
 };
+
+int WindowDump(void);
 
 int main(int argc, char **argv) {
 
@@ -382,11 +385,14 @@ int main(int argc, char **argv) {
 
     /////////////////////////////////
 
+    int frameCounter = 0;
+
     while (glfwWindowShouldClose(window) == GL_FALSE) {
         if (!updateTracking()) {
             std::cout << "Finishing execution due to end of video" << std::endl;
             break;
         }
+
 
         updateSensors(points3d);
 
@@ -414,9 +420,11 @@ int main(int argc, char **argv) {
                      (GLfloat) (-0.5 * (bmax[2] + bmin[2])));
 
         Draw(drawObject);
+        WindowDump();
 
         glfwSwapBuffers(window);
         cv::waitKey(50);
+
     }
 
     glfwTerminate();
@@ -442,9 +450,14 @@ int main(int argc, char **argv) {
 
 }
 
+
+int counterC = 0;
+
 bool updateTracking() {
     int detectionQuality;
     int cameraNum = 1;
+
+    counterC += 1;
 
     for (auto cap : capture) {
 
@@ -480,6 +493,12 @@ bool updateTracking() {
         if (cameraNum == 1) {
             pointsCam1 = points;
             imshow("Input#" + std::to_string(cameraNum), frame);
+
+            if(counterC % 10 == 0){
+                char fname[256];
+                sprintf(fname, "output/i_%04d_input.ppm", counterC);
+                cv::imwrite(fname, frame);
+            }
 
         }
         else if (detectionQuality) {

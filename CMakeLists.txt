@@ -73,6 +73,7 @@ add_definitions(
 
 set(SOURCE_FILES
         src/main.cpp
+        src/windowdump.cpp
         src/trackball.cc
         src/display.h
         src/display.cpp
@@ -96,6 +97,9 @@ target_link_libraries(BlendShapesViewer
         ${FACE_ANALYSIS_LIB}/libutilities.so
         ${FACE_ANALYSIS_LIB}/libclmTracker.so
         ${FACE_ANALYSIS_LIB}/libavatarAnim.so
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_REGEX_LIBRARY}
+        ${Boost_FILESYSTEM_LIBRARY}
         )
 
 

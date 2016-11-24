@@ -13,7 +13,7 @@
 #include "display.h"
 
 
-#define HIGHRES 1
+#define HIGHRES 0
 
 #if HIGHRES > 0
 int QUANTITY_POSES = 10;
@@ -80,6 +80,7 @@ std::vector<std::string> keyPoseNames = {
 };
 
 #endif
+
 
 int quantityOfSensors = quantityOfPoses;
 

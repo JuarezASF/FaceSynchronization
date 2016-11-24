@@ -49,8 +49,10 @@ void startFaceTracker(FACETRACKER::FaceTracker **trackerToStart, FACETRACKER::Fa
 }
 
 bool startCapture() {
-    capture.at(0).open("video/out_mouth1_2.avi");
-    capture.at(1).open("video/out_mouth2_2.avi");
+//    capture.at(0).open("video/out_mouth1_2.avi");
+//    capture.at(1).open("video/out_mouth2_2.avi");
+    capture.at(0).open("video/final/out_1.avi");
+    capture.at(1).open("video/final/out_2.avi");
 
 //    capture.at(0).open("video/out_eyebrow1_1.avi");
 //    capture.at(1).open("video/out_eyebrow2_1.avi");

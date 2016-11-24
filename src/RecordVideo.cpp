@@ -40,7 +40,8 @@ FACETRACKER::FaceTrackerParams **paramsA, **paramsB;
 
 Mat frame1, frame2;
 
-string imageNameA, imageNameB;
+int toDiscard = 20;
+int discarded = 0;
 
 int main(int argc, char **argv) {
 
@@ -78,6 +79,9 @@ int main(int argc, char **argv) {
         cerr << "cannot start tracker B" << endl;
         return 0;
     }
+
+    (*trackerA)->Reset();
+    (*trackerB)->Reset();
 
 
     cap1.open(1);
@@ -119,11 +123,13 @@ int main(int argc, char **argv) {
         imshow("InputB", frame2);
 
         char q = (char) (0xFF & waitKey(waitTime));
+
+        if (q == 27 || q == 'q') {
+            cout << "esc key is pressed by user" << endl;
+            break;
+        }
+
         if (mode == 0) {
-            if (q == 27) {
-                cout << "esc key is pressed by user" << endl;
-                break;
-            }
 
             if (q == 's') {
                 waitTime = 100;
@@ -132,9 +138,17 @@ int main(int argc, char **argv) {
 
         }
         else if (mode == 1) {
+            if (q == 's') {
+                waitTime = 500;
+                mode = 2;
+            }
+            readAndExecuteOnce();
 
+        }
+        else if (mode == 2) {
             if (captured < toCapture) {
                 if (readAndExecuteOnce()) {
+
                     //write frames to file
                     char nameABuffer[100];
                     char nameBBuffer[100];
@@ -156,8 +170,9 @@ int main(int argc, char **argv) {
             }
             else {
                 waitTime = 30;
-                mode = 2;
+                mode = 3;
             }
+
         }
         else {
             cout << "All frames were captured!" << endl;
